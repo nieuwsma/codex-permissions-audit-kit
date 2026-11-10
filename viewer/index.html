@@ -19,6 +19,7 @@ th{background:#f5f5f7}
 td.fit,th.fit{white-space:nowrap;width:1%}
 code{background:#f2f2f5;padding:1px 5px;border-radius:4px;font-size:13px;white-space:nowrap}
 code.break,code.path{white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+code.ident{white-space:normal;overflow-wrap:normal;word-break:normal}
 .pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap}
 @media (max-width:700px){
   body{margin:24px auto;padding:0 16px}
@@ -315,10 +316,15 @@ function featuresHtml(audit) {
   if (notes.length) html += " " + esc(notes[0]);
   return html + "</p>";
 }
+function areaLabel(text) {
+  return esc(text).replace(/[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+/g, function (word) {
+    return "<code class=\"ident\">" + word.replace(/_/g, "_<wbr>") + "</code>";
+  });
+}
 function matrixHtml(audit) {
   var host = ((audit.host || {}).hostname) || "this host";
   var rows = (audit.matrix || []).map(function (row) {
-    return [esc(row.title), codeify(row.expected || ""), codeify(row.observed || ""), pill(toneOf(row.status), wordOf(row.status))];
+    return [areaLabel(row.title), codeify(row.expected || ""), codeify(row.observed || ""), pill(toneOf(row.status), wordOf(row.status))];
   });
   return "<h2>Privilege matrix comparison</h2>" + table(["Area", "Matrix says", host, "Status"], rows, [{w:"24%"}, {}, {}, {w:"7rem", fit:true}]);
 }

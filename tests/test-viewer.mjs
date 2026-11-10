@@ -94,6 +94,7 @@ assert(rendered.includes(">FAIL<") && rendered.includes(">PASS<"), "scanner pill
 assert(rendered.includes("<colgroup>"), "tables declare columns");
 assert(rendered.includes("class=\"fit\""), "pill columns do not wrap");
 assert(rendered.includes("class=\"break\""), "long commands can break");
+assert(rendered.includes("skill_<wbr>mcp_<wbr>dependency_<wbr>install"), "area labels wrap at underscores");
 assert(rendered.includes("<code>sandbox_mode</code> = <code>danger-full-access</code>"), "assignments wrap at spaces");
 assert(rendered.includes("<code>default_permissions</code> = <code>:danger-full-access</code>"), "permission value stays one token");
 assert(!rendered.includes("sandbox_mode=danger-full-access"), "no glued assignment");
