@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nieuwsma/codex-permissions-audit-kit/schema/audit.schema.json",
+  "title": "Codex permissions audit",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "generated_at",
+    "host",
+    "kit",
+    "invocation",
+    "summary",
+    "codex",
+    "rules",
+    "requirements",
+    "opencode",
+    "tools",
+    "matrix",
+    "recommendations",
+    "skipped",
+    "not_covered",
+    "verification",
+    "redaction"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "generated_at": { "type": "string" },
+    "host": {
+      "type": "object",
+      "required": ["hostname", "os"],
+      "properties": {
+        "hostname": { "type": "string" },
+        "os": { "type": "string" },
+        "platform": { "type": "string" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["posture", "headline", "counts", "recommendation_counts"],
+      "properties": {
+        "posture": { "enum": ["ok", "warn", "gap"] },
+        "headline": { "type": "string" },
+        "counts": { "type": "object" },
+        "recommendation_counts": { "type": "object" }
+      }
+    },
+    "codex": {
+      "type": "object",
+      "required": ["cli", "posture", "trusted_projects", "mcp_servers", "plugins", "features", "otel"],
+      "properties": {
+        "posture": { "type": "object" },
+        "trusted_projects": { "type": "array" },
+        "mcp_servers": { "type": "array" },
+        "plugins": { "type": "array" },
+        "features": { "type": "array" },
+        "otel": { "type": "object" }
+      }
+    },
+    "rules": {
+      "type": "object",
+      "required": ["entries"],
+      "properties": { "entries": { "type": "array" } }
+    },
+    "requirements": {
+      "type": "object",
+      "required": ["locations"],
+      "properties": { "locations": { "type": "array" } }
+    },
+    "tools": { "type": "object" },
+    "matrix": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "status", "expected", "observed", "source"],
+        "properties": {
+          "status": { "enum": ["ok", "warn", "gap", "info", "skipped"] },
+          "source": { "const": "kit-matrix" }
+        }
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "priority", "source", "title", "detail", "rule_id"],
+        "properties": {
+          "priority": { "enum": ["critical", "high", "medium", "low"] },
+          "source": { "enum": ["kit-matrix", "tool", "heuristic"] },
+          "tool": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "skipped": { "type": "array" },
+    "not_covered": { "type": "array" },
+    "verification": {
+      "type": "object",
+      "required": ["ok", "watched", "notes"],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "watched": { "type": "array" },
+        "notes": { "type": "array" }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "required": ["applied", "replacements"],
+      "properties": {
+        "applied": { "type": "boolean" },
+        "replacements": { "type": "integer" }
+      }
+    }
+  }
+}

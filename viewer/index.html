@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<!--
+SPDX-License-Identifier: Apache-2.0
+Copyright 2026 Nieuwsma Services LLC
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codex permissions audit</title>
+<style>
+  :root {
+    --ink: #1c1915;
+    --muted: #5c564c;
+    --paper: #f4f0e6;
+    --card: #fffdf8;
+    --line: #e2d9c8;
+    --accent: #8c3a2f;
+    --ok: #146c36;
+    --ok-bg: #e5f4ea;
+    --warn: #8a5a00;
+    --warn-bg: #fff3d6;
+    --gap: #9f2d20;
+    --gap-bg: #fde4e1;
+    --info: #234e70;
+    --info-bg: #e7eef6;
+    --skip: #555;
+    --skip-bg: #eeeae3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 16px/1.5 "Segoe UI", "Helvetica Neue", sans-serif;
+  }
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 28px 32px 22px;
+  }
+  header h1 { margin: 0 0 6px; font-size: 28px; font-weight: 650; letter-spacing: -0.02em; }
+  header p { margin: 0; max-width: 46rem; color: #e6dfd2; }
+  main { max-width: 1080px; margin: 0 auto; padding: 22px 20px 64px; }
+  a { color: var(--accent); }
+  nav { display: flex; flex-wrap: wrap; gap: 10px 14px; margin: 8px 0 18px; }
+  nav a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
+  .loader, section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin: 14px 0;
+  }
+  .drop {
+    border: 1.5px dashed #b7ab96;
+    border-radius: 12px;
+    padding: 22px;
+    text-align: center;
+    background: #faf7f0;
+  }
+  .drop.hot { border-color: var(--accent); background: #fff6f2; }
+  button, .file {
+    font: inherit;
+    background: var(--ink);
+    color: var(--paper);
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  input[type="file"] { margin-top: 10px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .card { background: var(--paper); border-radius: 12px; padding: 12px 14px; }
+  .card b { display: block; font-size: 26px; line-height: 1.2; }
+  .card span { color: var(--muted); font-size: 13px; }
+  h2 { margin: 0 0 10px; font-size: 20px; }
+  h3 { margin: 16px 0 8px; font-size: 16px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  th { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+  .pill {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-size: 12px;
+    font-weight: 650;
+    background: var(--skip-bg);
+    color: var(--skip);
+  }
+  .pill.ok { background: var(--ok-bg); color: var(--ok); }
+  .pill.warn, .pill.medium { background: var(--warn-bg); color: var(--warn); }
+  .pill.gap, .pill.critical, .pill.high, .pill.error { background: var(--gap-bg); color: var(--gap); }
+  .pill.info, .pill.low { background: var(--info-bg); color: var(--info); }
+  .pill.skipped { background: var(--skip-bg); color: var(--skip); }
+  .empty, .muted { color: var(--muted); }
+  .banner { border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+  .banner.ok { background: var(--ok-bg); color: var(--ok); }
+  .banner.gap { background: var(--gap-bg); color: var(--gap); }
+  .error { color: var(--gap); font-weight: 650; }
+  code { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 0.92em; }
+  ul { margin: 8px 0; padding-left: 18px; }
+  footer { color: var(--muted); font-size: 13px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Codex permissions audit</h1>
+  <p>A read-only view of one <code>audit.json</code> file. This page does not change configuration.</p>
+</header>
+<main>
+  <div class="loader" id="drop">
+    <p>Open an <code>audit.json</code> from <code>reports/&lt;hostname&gt;-&lt;time&gt;/</code>.</p>
+    <label>Choose a file <input id="file" type="file" accept="application/json,.json"></label>
+    <p class="muted">You can also drop the file here. If this page is served over HTTP, <code>?data=../reports/&lt;directory&gt;/audit.json</code> loads it.</p>
+  </div>
+  <p id="error" class="error"></p>
+  <div id="report"></div>
+</main>
+<script>
+"use strict";
+function esc(value) {
+  return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+    return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
+  });
+}
+function pill(status) {
+  var known = { ok: 1, warn: 1, gap: 1, info: 1, skipped: 1, critical: 1, high: 1, medium: 1, low: 1, error: 1 };
+  var key = known[status] ? status : "info";
+  return '<span class="pill ' + key + '">' + esc(status || "info") + "</span>";
+}
+function cell(value) {
+  if (value && typeof value === "object" && value.html) return value.html;
+  return esc(value);
+}
+function table(headers, rows) {
+  if (!rows || !rows.length) return '<p class="empty">None recorded.</p>';
+  var head = headers.map(function (item) { return "<th>" + esc(item) + "</th>"; }).join("");
+  var body = rows.map(function (row) {
+    return "<tr>" + row.map(function (item) { return "<td>" + cell(item) + "</td>"; }).join("") + "</tr>";
+  }).join("");
+  return "<table><thead><tr>" + head + "</tr></thead><tbody>" + body + "</tbody></table>";
+}
+function section(id, title, body) {
+  return '<section id="' + id + '"><h2>' + esc(title) + "</h2>" + body + "</section>";
+}
+function list(items) {
+  if (!items || !items.length) return '<p class="empty">None recorded.</p>';
+  return "<ul>" + items.map(function (item) { return "<li>" + esc(item) + "</li>"; }).join("") + "</ul>";
+}
+function sourceLabel(rec) {
+  if (!rec) return "";
+  if (rec.source === "kit-matrix") return "Kit matrix";
+  if (rec.source === "heuristic") return "Heuristic";
+  if (rec.source === "tool") return rec.tool || "Tool";
+  return rec.source || "";
+}
+function sideText(item, side) {
+  if (!side || side.present === false || side.present == null) return "absent";
+  if (item.kind === "size_mtime") {
+    return "size " + side.size + ", mtime " + side.mtime_ns + (item.content_read ? "" : " (contents not read)");
+  }
+  if (item.kind === "tree") {
+    var names = Object.keys(side.files || {});
+    return names.length + " file(s): " + names.join(", ");
+  }
+  return side.sha256 ? String(side.sha256).slice(0, 12) : "unreadable";
+}
+function renderHtml(audit) {
+  audit = audit || {};
+  var summary = audit.summary || {};
+  var counts = summary.counts || {};
+  var recCounts = summary.recommendation_counts || {};
+  var codex = audit.codex || {};
+  var posture = codex.posture || {};
+  var verification = audit.verification || {};
+  var cards = [
+    ["Posture", summary.posture || ""],
+    ["Gaps", counts.gap || 0],
+    ["Warnings", counts.warn || 0],
+    ["MCP servers", summary.mcp_server_count || 0],
+    ["Risky allow rules", summary.risky_allow_rule_count || 0],
+    ["Critical recommendations", recCounts.critical || 0],
+    ["Verification", verification.ok ? "no changes" : "changed"]
+  ];
+  var cardHtml = '<div class="cards">' + cards.map(function (pair) {
+    return '<div class="card"><b>' + esc(pair[1]) + "</b><span>" + esc(pair[0]) + "</span></div>";
+  }).join("") + "</div>";
+  var host = audit.host || {};
+  var intro = "<p>" + esc(summary.headline || "") + "</p><p class=\"muted\">" +
+    esc(host.hostname || "") + " · " + esc(audit.generated_at || "") + " · " +
+    esc((codex.cli || {}).version || "codex version not recorded") + "</p>" + cardHtml;
+
+  var postureRows = [
+    ["Approval policy", posture.approval_policy || posture.approval_policy_kind || ""],
+    ["Sandbox mode", posture.sandbox_mode || "unset"],
+    ["Default permissions", posture.default_permissions || "unset"],
+    ["Approvals reviewer", posture.approvals_reviewer || "unset"],
+    ["Credential store", posture.cli_auth_credentials_store || "unset"],
+    ["Home trusted", posture.home_trusted ? "yes" : "no"],
+    ["Config", codex.config_path || ""],
+    ["Parse error", codex.parse_error || ""]
+  ];
+  var postureHtml = table(["Setting", "Value"], postureRows.map(function (row) { return row; }));
+
+  var projectRows = (codex.trusted_projects || []).map(function (row) {
+    return [row.path, row.trust_level || "", row.is_home ? "yes" : "no"];
+  });
+  var ruleRows = ((audit.rules || {}).entries || []).map(function (row) {
+    return [
+      row.file,
+      row.pattern_text,
+      row.decision,
+      { html: pill(row.risk) },
+      (row.risk_reasons || []).join("; ")
+    ];
+  });
+  var mcpRows = (codex.mcp_servers || []).map(function (row) {
+    return [
+      row.name,
+      row.identity,
+      row.approval_mode || "unset",
+      { html: pill(row.risk) },
+      (row.risk_reasons || []).join("; ")
+    ];
+  });
+  var pluginRows = (codex.plugins || []).map(function (row) {
+    return [row.name, row.enabled ? "enabled" : "disabled"];
+  });
+  var featureRows = (codex.features || []).map(function (row) {
+    return [row.name, String(row.value), row.high_privilege ? "yes" : "no", row.note || ""];
+  });
+  var otel = codex.otel || {};
+  var otelHtml = "<p>Exporter: " + esc(otel.exporter || "unset") +
+    ". Endpoint: " + esc(otel.endpoint_redacted || "none") +
+    ". log_user_prompt: " + esc(otel.log_user_prompt) +
+    ". log_agent_responses: " + esc(otel.log_agent_responses) + ".</p>" +
+    list(otel.notes || []);
+
+  var tools = audit.tools || {};
+  var toolOrder = ["mcp_audit", "access_auditor", "aisec_codex_audit"];
+  var toolHtml = toolOrder.map(function (key) {
+    var tool = tools[key] || {};
+    var findings = tool.findings || tool.checks || [];
+    var findingRows = findings.map(function (row) {
+      if (row.secret) {
+        var secret = row.secret;
+        return [row.agent || "", row.category || row.status || "", row.title || "", secret.path || "", (secret.type || "") + " " + (secret.date || "") + " " + (secret.preview || "")];
+      }
+      return [
+        row.agent || row.server || row.id || "",
+        row.category || row.severity || row.status || "",
+        row.title || "",
+        row.path || "",
+        row.detail || row.why || ""
+      ];
+    });
+    var recRows = (tool.recommendations || []).map(function (row) {
+      return [{ html: pill(row.priority) }, sourceLabel(row), row.title, row.detail];
+    });
+    var extra = "";
+    if (tool.grade) extra += "<p>Grade " + esc(tool.grade) + (tool.score == null ? "" : " (" + esc(tool.score) + ")") + ".</p>";
+    if (tool.summary) {
+      extra += "<p>Pass " + esc(tool.summary.pass) + ", warn " + esc(tool.summary.warn) + ", fail " + esc(tool.summary.fail) + ", info " + esc(tool.summary.info) + ".</p>";
+    }
+    if (tool.reach && tool.reach.length) {
+      extra += table(["Agent", "Verdict", "Reasons"], tool.reach.map(function (row) {
+        return [row.name, row.verdict, (row.reasons || []).join(" ")];
+      }));
+    }
+    return "<h3>" + esc(tool.name || key) + " " + pill(tool.status || "skipped") + "</h3>" +
+      "<p class=\"muted\">" + esc(tool.reason || "") + "</p>" + extra +
+      "<h3>Findings</h3>" + table(["Where", "Kind", "Title", "Path", "Detail"], findingRows) +
+      "<h3>Recommendations from this tool</h3>" + table(["Priority", "Source", "Title", "Detail"], recRows);
+  }).join("");
+
+  var matrixRows = (audit.matrix || []).map(function (row) {
+    return [row.id, row.title, { html: pill(row.status) }, row.expected, row.observed];
+  });
+  var recRows = (audit.recommendations || []).map(function (row) {
+    return [{ html: pill(row.priority) }, sourceLabel(row), row.rule_id || row.id, row.title, row.detail];
+  });
+  var skippedRows = (audit.skipped || []).map(function (row) { return [row.step, row.reason]; });
+  var coveredRows = (audit.not_covered || []).map(function (row) { return [row.item, row.reason]; });
+  var verifyRows = (verification.watched || []).map(function (row) {
+    return [
+      row.path,
+      row.kind,
+      sideText(row, row.before),
+      sideText(row, row.after),
+      { html: pill(row.changed ? "gap" : "ok") }
+    ];
+  });
+  var banner = verification.ok
+    ? '<div class="banner ok">Read-only verification passed. Watched files were unchanged.</div>'
+    : '<div class="banner gap">Read-only verification failed. A watched file changed during the audit.</div>';
+
+  return intro +
+    section("posture", "Effective Codex posture", postureHtml) +
+    section("projects", "Trusted projects", table(["Path", "Trust", "Is home"], projectRows)) +
+    section("rules", "Auto-allow rules", table(["File", "Pattern", "Decision", "Risk", "Why"], ruleRows)) +
+    section("mcp", "MCP servers and plugins", "<h3>MCP servers</h3>" + table(["Name", "Identity", "Approval", "Risk", "Why"], mcpRows) + "<h3>Plugins</h3>" + table(["Name", "State"], pluginRows)) +
+    section("features", "High-privilege feature flags", table(["Flag", "Value", "High privilege", "Note"], featureRows) + otelHtml) +
+    section("tools", "Scanner findings", toolHtml) +
+    section("matrix", "Privilege matrix", table(["Check", "Title", "Result", "Expected", "Observed"], matrixRows)) +
+    section("recommendations", "Recommendations", "<p class=\"muted\">Each item is tagged Kit matrix, a scanner name, or Heuristic. The page does not apply them.</p>" + table(["Priority", "Source", "Rule", "Title", "Detail"], recRows)) +
+    section("skipped", "Skipped and not covered", "<h3>Skipped</h3>" + table(["Step", "Reason"], skippedRows) + "<h3>Not covered</h3>" + table(["Item", "Reason"], coveredRows)) +
+    section("verification", "Read-only verification", banner + table(["Path", "Kind", "Before", "After", "Changed"], verifyRows) + list(verification.notes || [])) +
+    '<footer>Redaction replacements recorded: ' + esc((audit.redaction || {}).replacements) + ". Schema " + esc(audit.schema_version || "") + ".</footer>";
+}
+function showError(message) {
+  var node = document.getElementById("error");
+  if (node) node.textContent = message;
+}
+function renderAudit(audit, mount) {
+  var root = mount || document.getElementById("report");
+  showError("");
+  root.innerHTML = renderHtml(audit || {});
+}
+function readFile(file) {
+  var reader = new FileReader();
+  reader.onload = function () {
+    try {
+      renderAudit(JSON.parse(String(reader.result || "")));
+    } catch (err) {
+      showError("That file is not JSON: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+function init() {
+  var input = document.getElementById("file");
+  var drop = document.getElementById("drop");
+  if (input) {
+    input.addEventListener("change", function () {
+      if (input.files && input.files[0]) readFile(input.files[0]);
+    });
+  }
+  if (drop) {
+    drop.addEventListener("dragover", function (event) {
+      event.preventDefault();
+      drop.classList.add("hot");
+    });
+    drop.addEventListener("dragleave", function () { drop.classList.remove("hot"); });
+    drop.addEventListener("drop", function (event) {
+      event.preventDefault();
+      drop.classList.remove("hot");
+      var file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+      if (file) readFile(file);
+    });
+  }
+  if (typeof location !== "undefined") {
+    var data = new URLSearchParams(location.search || "").get("data");
+    if (data && typeof fetch === "function") {
+      fetch(data).then(function (response) {
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        return response.json();
+      }).then(renderAudit).catch(function () {
+        showError("Could not load " + data + ". Use the file picker if this page was opened from disk.");
+      });
+    }
+  }
+}
+if (typeof document !== "undefined") {
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+}
+globalThis.renderAudit = renderAudit;
+</script>
+</body>
+</html>

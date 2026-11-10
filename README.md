@@ -1,55 +1,103 @@
 # Codex Permissions Audit Kit
 
-Starter kit for auditing and locking down permissions on OpenAI Codex (CLI and IDE extension) in enterprise environments.
+This kit is a read-only audit of what Codex and the AI tools beside it can access on a Mac. It reads Codex settings, command rules, MCP servers, plugins, and feature flags, then compares that picture with the privilege matrix in this repository and writes recommendations. The audit never changes anything: it does not edit configuration, change approvals, install hooks, or revoke access.
 
-Focus: prevent over-privileged agentic use of MCP plugins and local tools (e.g., full disk access, destructive Jira operations) by combining central `requirements.toml` enforcement with local discovery scanners.
+## Run it with Codex
 
-## Quick Start
+Clone the repository and start Codex in that directory:
 
-1. Review and adapt `examples/requirements.toml` for your ChatGPT Business/Enterprise workspace or MDM delivery.
-2. Install the recommended local scanners (see `docs/installation.md`).
-3. Run a local audit on a developer machine to inventory current MCP servers, permission profiles, and approval policies.
-4. Map findings to the privilege matrix in `examples/privilege-matrix.md` and tighten allowlists / approval modes.
-5. Deploy the managed policy; use `codex doctor` to validate.
+```bash
+git clone https://github.com/nieuwsma/codex-permissions-audit-kit.git
+cd codex-permissions-audit-kit
+codex
+```
 
-## What This Addresses
+Paste this prompt:
 
-- Users enabling full disk / `danger-full-access` without realizing the blast radius.
-- MCP plugins (Jira, GitHub, Linear, etc.) that inherit write/delete scopes when only read is needed.
-- Lack of a local “what can this account/box actually do?” inventory.
+```text
+Run the full read-only audit per AGENTS.md and summarize
+```
 
-CLI and IDE extension share `~/.codex/config.toml` and the same sandbox / permission-profile model. Enterprise accounts receive cloud-managed requirements on sign-in.
+Codex follows `AGENTS.md`: it runs the audit, does not apply fixes, and summarizes the result. The script writes:
 
-## Recommended Local Tools
+```text
+reports/<hostname>-<YYYYMMDDTHHMMSSZ>/audit.json
+```
 
-| Tool | Purpose | Install |
-|------|---------|---------|
-| **mcp-audit** (mcp-audit-scanner) | Enumerate MCP servers, risk-score tools, detect secrets & excessive permissions | `pip install mcp-audit-scanner` |
-| **Codex Security Audit** (AI Security Labs) | Offline check of config.toml, sandbox, hooks, MCP inventory against security guide | Clone + Docker (see docs) |
-| **AI Access Auditor** | GUI/CLI inventory of agent permissions across Codex, Claude Code, Cursor, etc. | Download app or build from source |
-| **codex doctor** | Built-in: shows effective config layers, requirements conflicts | Ships with Codex CLI |
+Redacted raw output from each check is in the same directory under `raw/`.
 
-## Enterprise Controls (preferred)
+Open `viewer/index.html` in a browser. Use the file picker, or drag `audit.json` onto the page. The viewer is a checked-in page that fills itself from that file. It does not build a new HTML report. If you serve the repository over HTTP, you can also open `viewer/index.html?data=../reports/<directory>/audit.json`. Opening the HTML file directly from disk cannot fetch that path; use the file picker in that case.
 
-Use managed `requirements.toml` (cloud, MDM, or `/etc/codex/requirements.toml`) to:
+A synthetic report for trying the viewer is `examples/fixtures/audit.example.json`. It is not from a real machine.
 
-- Restrict `allowed_permission_profiles` (omit `:danger-full-access`).
-- Allowlist MCP servers by name + identity (command or URL).
-- Force `on-request` approvals.
-- Pin network, web search, and feature flags.
+## Manual run
 
-See official docs: https://developers.openai.com/codex/enterprise/managed-configuration/
+Prerequisites:
 
-## Privilege Matrix (summary)
+- bash (the script works with the bash 3.2 that ships with macOS)
+- Python 3.11 or newer
+- The Codex CLI on `PATH` if you want `codex doctor`, `codex mcp list`, plugin and feature lists, and `scripts/local-audit.sh`. Those steps are skipped when `codex` is missing.
 
-| Impact | Examples | Suggested default |
-|--------|----------|-------------------|
-| Read-only | search, get issue, list PRs | Always allow |
-| Reversible write | create comment, update description | Prompt or auto with review |
-| Destructive / high-impact | delete issue, bulk transition, force push, rm -rf | Deny or explicit approval + scoped credential |
+```bash
+bash scripts/full-readonly-audit.sh
+```
 
-Full matrix and MCP examples: `examples/privilege-matrix.md`
+Flags:
+
+| Flag | What it does |
+| --- | --- |
+| `--home PATH` | Home directory to read. Default is `$HOME`. |
+| `--report-dir PATH` | Where to write the report. Default is `reports/<hostname>-<UTC time>/`. |
+| `--project PATH` | Directory mounted read-only into the Docker audit. Default is this repository. `$HOME` and `/` are never mounted. |
+| `--with-mcp-audit` | If `mcp-audit` is not already on `PATH`, install `mcp-audit-scanner==0.29.0` into the report directory and run discover, check, scan, and reach. |
+| `--with-access-auditor` | Clone AI Access Auditor at `f197f39122a21c1169a4ce77e7bfcf58b83cb0cd` into the report directory and run `node server.js --scan`. |
+| `--with-aisec-audit` | Clone the AISecurityLabs Codex Security Audit at `2031e5da6a0a086a5fbf1dcc0aea09dc0135b5eb`, build it, and run it. |
+| `--hostname NAME` | Hostname stored in `audit.json`. |
+| `--generated-at ISO-8601` | Timestamp stored in `audit.json`. |
+
+Optional tools run when they are already available, and they are skipped with a reason when they are not. Downloading them or building the Docker image happens only with the flags above. `AI_ACCESS_AUDITOR_HOME` can point at an existing checkout that contains `server.js`. The same script runs on Linux; the macOS MDM lookup and TCC are skipped there. More detail is in `docs/installation.md`.
+
+Pinned versions live in `scripts/auditkit/pins.py`:
+
+- mcp-audit-scanner `0.29.0`
+- AI Access Auditor `f197f39122a21c1169a4ce77e7bfcf58b83cb0cd`
+- Codex Security Audit `2031e5da6a0a086a5fbf1dcc0aea09dc0135b5eb` (the runner rewrites the vanished Alpine pin `yq-go=4.53.3-r1` to `yq-go=4.53.3-r2` inside the report checkout before the image build)
+
+## What it checks
+
+- Codex approval policy, sandbox mode, and `default_permissions`, including whether both legacy and profile settings are set
+- Trusted projects, and whether the home directory itself is trusted
+- `prefix_rule` entries under `~/.codex/rules/`, especially auto-allow rules for `git push`, `curl` / `wget`, `rm`, `sudo`, and package installers
+- MCP servers and their approval modes, plus enabled plugins
+- High-privilege feature flags and OpenTelemetry prompt or response export
+- Managed requirements at `/etc/codex/requirements.toml` and, on macOS, the `com.openai.codex` MDM payload
+- OpenCode `share` and shell permission in `~/.config/opencode/opencode.json`
+- When the tools are available: `codex doctor`, `mcp-audit` discover / check / scan / reach, AI Access Auditor `--scan`, and the AISecurityLabs Codex Security Audit (JSON, HTML, and text)
+
+Findings are compared with `examples/privilege-matrix.md` and the sample `examples/requirements.toml`. The rules that turn those findings into recommendations are in `docs/recommendation-rules.md`. The JSON shape is in `docs/audit-json.md` and `schema/audit.schema.json`.
+
+## Read-only and redaction guarantees
+
+The runner writes only under the report directory (its `tmp/` and `raw/` included). It does not use sudo. It does not prompt for Full Disk Access or any other TCC permission. It does not use the network except when you pass a flag that installs a tool or builds the audit image.
+
+Before any scanner runs, and again after, it records:
+
+- a SHA-256 of `~/.codex/config.toml`
+- a SHA-256 of each file under `~/.codex/rules/`
+- a SHA-256 of `~/.config/opencode/opencode.json` (or the `XDG_CONFIG_HOME` path)
+- a SHA-256 of `~/.codex/hooks.json`, so a hook install is visible
+- the size and mtime of `~/.codex/auth.json`
+
+`auth.json` is never opened. If any watched file changed, `verification.ok` is false, the report still explains the mismatch, and the script exits 3.
+
+Secret-shaped values are masked before they are written. That includes common token prefixes, private keys, bearer values, and assignments whose names look like keys or passwords. AI Access Auditor secret findings keep only the path, type, date, and a masked preview. Tool state that would otherwise land in `~/.config` is redirected into the report directory. The commands that mutate configuration (`fix`, `lock`, `pin`, `register`, `push-nucleus`, `--connect`, revoke, hook install) are not run.
+
+Do not commit `reports/`. Paths and posture in a report are still private.
 
 ## License
 
-MIT (adapt as needed for internal use).
+Copyright 2026 Nieuwsma Services LLC.
+
+Licensed under the Apache License, Version 2.0. See `LICENSE` and `NOTICE`.
+
+The optional scanners named above are not included in this repository and are not relicensed by it. They keep their own licenses and are downloaded only when you pass the matching flag.
