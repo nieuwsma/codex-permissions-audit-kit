@@ -16,7 +16,7 @@ table{border-collapse:collapse;width:100%;margin:12px 0}th,td{text-align:left;pa
 th{background:#f5f5f7}code{background:#f2f2f5;padding:1px 5px;border-radius:4px;font-size:13px}
 .pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:12px;font-weight:600}
 .ok{background:#e3f6e8;color:#1a7f37}.warn{background:#fff4dc;color:#9a6700}.bad{background:#ffe5e5;color:#c62828}.na{background:#eee;color:#555}
-.cards{display:flex;gap:12px;flex-wrap:wrap}.card{flex:1;min-width:170px;background:#f5f5f7;border-radius:10px;padding:14px}
+.cards{display:flex;gap:12px;flex-wrap:wrap}.card{box-sizing:border-box;flex:1 1 calc((100% - 24px) / 3);min-width:calc((100% - 24px) / 3);max-width:calc((100% - 24px) / 3);background:#f5f5f7;border-radius:10px;padding:14px}
 .card b{display:block;font-size:22px}
 </style>
 </head>
@@ -65,17 +65,19 @@ function toneOf(status) {
 }
 function wordOf(status) {
   var s = String(status || "").toLowerCase();
-  if (s === "pass") return "PASS";
-  if (s === "fail") return "FAIL";
-  if (s === "warn" || s === "warning") return "WARN";
-  if (s === "gap") return "gap";
-  if (s === "high") return "high";
-  if (s === "medium") return "medium";
-  if (s === "low") return "low";
-  if (s === "info") return "info";
+  if (s === "pass" || s === "ok") return "ok";
+  if (s === "fail" || s === "gap" || s === "high" || s === "critical" || s === "error" || s === "bad") return "gap";
+  if (s === "warn" || s === "warning" || s === "medium") return "warn";
+  if (s === "info" || s === "low") return "info";
   if (s === "skipped") return "skipped";
-  if (s === "ok") return "ok";
   return s || "n/a";
+}
+function scannerWord(status) {
+  var s = String(status || "").toUpperCase();
+  if (s === "PASS" || s === "OK") return "PASS";
+  if (s === "FAIL") return "FAIL";
+  if (s === "WARN" || s === "WARNING") return "WARN";
+  return "N/A";
 }
 function table(headers, rows) {
   if (!rows.length) return "<p>None recorded.</p>";
@@ -246,9 +248,8 @@ function trustedHtml(audit) {
 function rulesHtml(audit) {
   var entries = ((audit.rules || {}).entries) || [];
   var rows = entries.map(function (row) {
-    var short = row.risk === "gap" ? "high" : row.risk === "warn" ? "warn" : "ok";
-    var why = ((row.risk_reasons || []).join("; ") || row.justification || "").replace(/_/g, " ");
-    return [code(row.pattern_text || "(unparsed)"), pill(toneOf(row.risk), short) + " " + esc(row.decision || "allow"), esc(why)];
+    var risk = row.risk === "gap" || row.risk === "warn" || row.risk === "ok" ? row.risk : "info";
+    return [code(row.pattern_text || "(unparsed)"), pill(toneOf(risk), risk) + " " + esc(row.decision || "allow"), esc(ruleWhy(row))];
   });
   return "<h2>Auto-allow approval rules</h2><p>An allow decision runs the matching command outside the sandbox. If a prefix rule omits the decision, Codex treats it as allow. Forbidden and prompt rules stay in the table so the safe ones are visible too.</p>" +
     table(["Rule", "Risk", "Why"], rows);
@@ -284,14 +285,131 @@ function matrixHtml(audit) {
   });
   return "<h2>Privilege matrix comparison</h2>" + table(["Area", "Matrix says", host, "Status"], rows);
 }
-function recommendationsHtml(audit) {
-  var items = audit.recommendations || [];
-  if (!items.length) return "<h2>Recommendations</h2><p>No recommendations were derived.</p>";
-  var html = "<h2>Recommendations</h2><ol>";
+function ruleWhy(row) {
+  var flags = row.flags || [];
+  var text = String(row.pattern_text || "").toLowerCase();
+  var decision = String(row.decision || "allow").toLowerCase();
+  if (decision === "forbidden") return "Blocked. The command cannot run.";
+  if (decision === "prompt") return "Asks before the command runs outside the sandbox.";
+  var reasons = [];
+  if (flags.indexOf("git_push") >= 0 || /git push/.test(text)) reasons.push("Pushes code to a remote without review.");
+  if (flags.indexOf("git_reset") >= 0 || /git reset|--hard/.test(text)) reasons.push("Rewrites history without review.");
+  if (flags.indexOf("curl") >= 0 || /\bcurl\b|\bwget\b/.test(text)) reasons.push("A fetched script can run outside the sandbox.");
+  if (flags.indexOf("rm") >= 0 || /^rm\b/.test(text)) reasons.push("Deletes files.");
+  if (flags.indexOf("installer") >= 0) reasons.push("Installs packages that run code.");
+  if (flags.indexOf("sudo") >= 0 || /\bsudo\b/.test(text)) reasons.push("Root access.");
+  if (flags.indexOf("shell") >= 0) reasons.push("A shell can hide extra commands.");
+  if (reasons.length) return reasons.join(" ");
+  if (row.risk === "ok") return "Read-only, safe.";
+  return "Runs outside the sandbox without a prompt.";
+}
+function issueKeys(rec) {
+  var blob = [rec.title, rec.detail, rec.rule_id, rec.id].join(" ").toLowerCase();
+  var keys = [];
+  if (/home/.test(blob) && /trust/.test(blob)) keys.push("home-trusted");
+  if (/approval_policy|approval policy|approvals are off/.test(blob)) keys.push("approval");
+  if (/danger-full-access|sandbox is fully open|no sandbox/.test(blob)) keys.push("danger");
+  if ((/\brm\b/.test(blob) || /km-rule-rm/.test(blob)) && !(/home/.test(blob) && /trust/.test(blob))) keys.push("rm");
+  if (/\bsudo\b/.test(blob)) keys.push("sudo");
+  if (/git push|git_push/.test(blob)) keys.push("git-push");
+  if (/\bcurl\b|\bwget\b/.test(blob)) keys.push("curl");
+  if (/installer|npm install|package install/.test(blob)) keys.push("installer");
+  if (/mcp/.test(blob)) keys.push("mcp");
+  if (/share/.test(blob) && /opencode|session/.test(blob)) keys.push("opencode-share");
+  if (/opencode/.test(blob) && /shell|\bbash\b/.test(blob)) keys.push("opencode-shell");
+  if (/auth\.json|keyring/.test(blob)) keys.push("auth");
+  if (/auto_review|automatic reviewer/.test(blob)) keys.push("auto-review");
+  if (/skill_mcp_dependency_install/.test(blob)) keys.push("skill-install");
+  if (/log_user_prompt|opentelemetry|telemetry/.test(blob)) keys.push("otel");
+  if (/requirements/.test(blob)) keys.push("requirements");
+  if (/login shell/.test(blob)) keys.push("login-shell");
+  if (/secret/.test(blob)) keys.push("secret");
+  if (/sandbox_mode and default_permissions|legacy sandbox/.test(blob)) keys.push("legacy-sandbox");
+  if (!keys.length) keys.push("other:" + (rec.rule_id || rec.id || rec.title || "item"));
+  return keys;
+}
+function recommendationGroups(items) {
+  var copy = {
+    "home-trusted": ["Do not trust the home directory", "A trusted home loads project rules for every file under it. Trust only the repositories you mean to."],
+    approval: ["Set approval_policy to on-request", "never lets Codex run commands without asking. The sample requirements allow only on-request."],
+    danger: ["Remove danger-full-access", "The sandbox is fully open. Use :workspace or :read-only, and leave sandbox_mode unset."],
+    rm: ["Do not auto-allow rm", "Deletes files outside the sandbox. Forbid rm, or ask every time."],
+    sudo: ["Do not auto-allow sudo", "Root access should not be granted by a prefix rule."],
+    "git-push": ["Ask before git push", "Pushes code to a remote without review."],
+    curl: ["Ask before curl and wget", "A fetched script can run outside the sandbox."],
+    installer: ["Ask before package installers", "Installs packages that run code."],
+    mcp: ["Prompt for write-capable MCP tools", "Auto approval on a GitHub, filesystem, or shell server is broader than the privilege matrix."],
+    "opencode-share": ["Turn off OpenCode auto-share", "share auto publishes new sessions to a link."],
+    "opencode-shell": ["Ask before the OpenCode shell", "An allow permission on bash or shell runs commands without a prompt."],
+    auth: ["Move the Codex login to the keyring", "auth.json is a file other programs can read. cli_auth_credentials_store can be keyring. This audit does not open the file."],
+    "auto-review": ["Keep a person as the approvals reviewer", "auto_review lets a model answer prompts that the matrix wants a person to see."],
+    "skill-install": ["Turn off skill_mcp_dependency_install", "The sample requirements leave this flag off so Codex does not install MCP dependencies on its own."],
+    otel: ["Do not export prompts or responses", "log_user_prompt and log_agent_responses can send source and credentials to the telemetry endpoint."],
+    requirements: ["Deploy managed requirements", "Nothing stops a user config from selecting danger-full-access or approval never until requirements.toml is enforced."],
+    "login-shell": ["Review login-shell startup files", "Shell startup files can export secrets or bypass the sandbox."],
+    secret: ["Rotate secrets left in session logs", "Keep only the path, type, date, and masked preview here, and replace the credential with the service."],
+    "legacy-sandbox": ["Use one permission setting", "Prefer default_permissions and do not also set sandbox_mode. When both are set, the legacy sandbox wins."]
+  };
+  var order = Object.keys(copy);
+  var rankOf = { critical: 0, high: 1, medium: 2, low: 3 };
+  function rank(rec) {
+    var value = rankOf[rec.priority];
+    return value == null ? 4 : value;
+  }
+  var buckets = {};
   items.forEach(function (rec) {
-    html += "<li>" + pill("na", sourceLabel(rec)) + " <b>" + codeify(rec.title || "") + "</b> " + codeify(rec.detail || "") + "</li>";
+    issueKeys(rec).forEach(function (key) {
+      if (!buckets[key]) buckets[key] = [];
+      buckets[key].push(rec);
+    });
   });
-  return html + "</ol>";
+  return Object.keys(buckets).map(function (key) {
+    var members = buckets[key];
+    var known = copy[key];
+    var best = members.slice().sort(function (a, b) { return rank(a) - rank(b); })[0];
+    var seen = {};
+    var sources = [];
+    ["kit matrix", "heuristic", "scanner"].forEach(function (label) {
+      members.forEach(function (rec) {
+        if (sourceLabel(rec) === label) seen[label] = true;
+      });
+    });
+    ["kit matrix", "heuristic", "scanner"].forEach(function (label) {
+      if (seen[label]) sources.push(label);
+    });
+    return {
+      key: key,
+      rank: Math.min.apply(null, members.map(rank)),
+      title: known ? known[0] : (best.title || "Review this finding"),
+      detail: known ? known[1] : (best.detail || ""),
+      sources: sources
+    };
+  }).sort(function (a, b) {
+    if (a.rank !== b.rank) return a.rank - b.rank;
+    var ia = order.indexOf(a.key);
+    var ib = order.indexOf(b.key);
+    if (ia < 0) ia = 1000;
+    if (ib < 0) ib = 1000;
+    if (ia !== ib) return ia - ib;
+    return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
+  });
+}
+function recommendationItem(group) {
+  var tags = group.sources.map(function (label) { return pill("na", label); }).join(" ");
+  return "<li>" + tags + " <b>" + codeify(group.title) + "</b> " + codeify(group.detail) + "</li>";
+}
+function recommendationsHtml(audit) {
+  var groups = recommendationGroups(audit.recommendations || []);
+  if (!groups.length) return "<h2>Recommendations</h2><p>No recommendations were derived.</p>";
+  var cap = 10;
+  var head = groups.slice(0, cap);
+  var rest = groups.slice(cap);
+  var html = "<h2>Recommendations</h2><ol>" + head.map(recommendationItem).join("") + "</ol>";
+  if (rest.length) {
+    html += "<details><summary>More (" + rest.length + ")</summary><ol start=\"" + (head.length + 1) + "\">" +
+      rest.map(recommendationItem).join("") + "</ol></details>";
+  }
+  return html;
 }
 function verificationParagraph(audit) {
   var verification = audit.verification || {};
@@ -330,7 +448,7 @@ function dockerHtml(audit) {
   var repo = pins.AISEC_REPO || "https://github.com/aisecuritylabs-org/coding-agent-security";
   var rows = (tool.checks || []).map(function (check) {
     var rec = (tool.recommendations || []).filter(function (item) { return item.title === check.title; })[0];
-    return [pill(toneOf(check.status), wordOf(check.status)), esc(check.title || ""), codeify((rec && rec.detail) || check.why || check.detail || "No change was applied.")];
+    return [pill(toneOf(check.status), scannerWord(check.status)), esc(check.title || ""), codeify((rec && rec.detail) || check.why || check.detail || "No change was applied.")];
   });
   var yq = (audit.invocation || {}).yq_patched ? " The Alpine yq pin was rewritten from r1 to r2 inside the report checkout before the image build." : "";
   return "<h2>Codex Security Audit (AISecurityLabs.org, Docker) " + pill("ok", "read-only") + "</h2>" +
