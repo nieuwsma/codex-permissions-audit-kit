@@ -26,9 +26,9 @@ A missing tool is a skipped check. Do not install it on your own.
 
 ## Read the report
 
-The script writes `reports/<hostname>-<YYYYMMDDTHHMMSSZ>/audit.json` and redacted raw output beside it.
+The script writes `reports/<hostname>-<YYYYMMDDTHHMMSSZ>/audit.json`, `report.html` in that same directory, and redacted raw output beside them. It prints the `report.html` path at the end.
 
-Tell the person to open `viewer/index.html` in a browser and load that `audit.json` (file picker or drag the file onto the page). The viewer is static. Do not generate a new HTML report.
+Tell the person that path and that opening `report.html` shows the audit immediately. Do not ask them to pick `audit.json` in the viewer. Do not pass `--open` unless they asked you to launch a browser. Do not generate a separate HTML report; `report.html` is a copy of `viewer/index.html` with the audit embedded.
 
 ## Summarize
 

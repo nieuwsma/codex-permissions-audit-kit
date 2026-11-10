@@ -18,17 +18,18 @@ Paste this prompt:
 Run the full read-only audit per AGENTS.md and summarize
 ```
 
-Codex follows `AGENTS.md`: it runs the audit, does not apply fixes, and summarizes the result. The script writes:
+Codex follows `AGENTS.md`: it runs the audit, does not apply fixes, and summarizes the result. The script writes a directory:
 
 ```text
 reports/<hostname>-<YYYYMMDDTHHMMSSZ>/audit.json
+reports/<hostname>-<YYYYMMDDTHHMMSSZ>/report.html
 ```
 
-Redacted raw output from each check is in the same directory under `raw/`.
+Redacted raw output from each check is in that directory under `raw/`. The script prints the `report.html` path when it finishes.
 
-Open `viewer/index.html` in a browser. Use the file picker, or drag `audit.json` onto the page. The viewer is a checked-in page that fills itself from that file. It does not build a new HTML report. If you serve the repository over HTTP, you can also open `viewer/index.html?data=../reports/<directory>/audit.json`. Opening the HTML file directly from disk cannot fetch that path; use the file picker in that case.
+Open `report.html` in a browser. The audit is already inside the page, so it renders immediately from `file://` with no file picker and no server. `viewer/index.html` is the template that page is copied from. Use the template’s file picker or drag-and-drop only when you want to load a different `audit.json`. If you serve a directory over HTTP, the viewer also loads `./audit.json` when that file is present, and `?data=` still loads an explicit path.
 
-A synthetic report for trying the viewer is `examples/fixtures/audit.example.json`. It is not from a real machine.
+A synthetic `audit.json` for trying the template is `examples/fixtures/audit.example.json`. It is not from a real machine.
 
 ## Manual run
 
@@ -54,6 +55,7 @@ Flags:
 | `--with-aisec-audit` | Clone the AISecurityLabs Codex Security Audit at `2031e5da6a0a086a5fbf1dcc0aea09dc0135b5eb`, build it, and run it. |
 | `--hostname NAME` | Hostname stored in `audit.json`. |
 | `--generated-at ISO-8601` | Timestamp stored in `audit.json`. |
+| `--open` | After the report is written, open `report.html` with `open` on macOS or `xdg-open` on Linux. Off unless you pass this flag. |
 
 Optional tools run when they are already available, and they are skipped with a reason when they are not. Downloading them or building the Docker image happens only with the flags above. `AI_ACCESS_AUDITOR_HOME` can point at an existing checkout that contains `server.js`. The same script runs on Linux; the macOS MDM lookup and TCC are skipped there. More detail is in `docs/installation.md`.
 

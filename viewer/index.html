@@ -110,13 +110,14 @@ Copyright 2026 Nieuwsma Services LLC
 </header>
 <main>
   <div class="loader" id="drop">
-    <p>Open an <code>audit.json</code> from <code>reports/&lt;hostname&gt;-&lt;time&gt;/</code>.</p>
+    <p>This page opens the saved audit on its own. Choose a file only if nothing is embedded and <code>audit.json</code> is not beside this page.</p>
     <label>Choose a file <input id="file" type="file" accept="application/json,.json"></label>
-    <p class="muted">You can also drop the file here. If this page is served over HTTP, <code>?data=../reports/&lt;directory&gt;/audit.json</code> loads it.</p>
+    <p class="muted">You can also drop a file here. Over HTTP, <code>?data=</code> loads a path, and <code>./audit.json</code> loads when it is present.</p>
   </div>
   <p id="error" class="error"></p>
   <div id="report"></div>
 </main>
+<script type="application/json" id="audit-data"></script>
 <script>
 "use strict";
 function esc(value) {
@@ -328,6 +329,28 @@ function readFile(file) {
   };
   reader.readAsText(file);
 }
+function readEmbedded() {
+  var node = document.getElementById("audit-data");
+  if (!node) return null;
+  var text = (node.textContent || "").trim();
+  if (!text) return null;
+  return JSON.parse(text);
+}
+function loadJsonUrl(url, missingIsQuiet) {
+  if (typeof fetch !== "function") return;
+  fetch(url).then(function (response) {
+    if (!response.ok) {
+      if (missingIsQuiet) return null;
+      throw new Error("HTTP " + response.status);
+    }
+    return response.json();
+  }).then(function (audit) {
+    if (audit) renderAudit(audit);
+  }).catch(function (err) {
+    if (!missingIsQuiet) showError("Could not load " + url + ". Use the file picker if this page was opened from disk.");
+    else if (err && err.name === "SyntaxError") showError("audit.json is not JSON: " + err.message);
+  });
+}
 function init() {
   var input = document.getElementById("file");
   var drop = document.getElementById("drop");
@@ -349,17 +372,26 @@ function init() {
       if (file) readFile(file);
     });
   }
-  if (typeof location !== "undefined") {
-    var data = new URLSearchParams(location.search || "").get("data");
-    if (data && typeof fetch === "function") {
-      fetch(data).then(function (response) {
-        if (!response.ok) throw new Error("HTTP " + response.status);
-        return response.json();
-      }).then(renderAudit).catch(function () {
-        showError("Could not load " + data + ". Use the file picker if this page was opened from disk.");
-      });
+  try {
+    var embedded = readEmbedded();
+    if (embedded) {
+      renderAudit(embedded);
+      return;
     }
+  } catch (err) {
+    showError("Embedded audit data is not JSON: " + err.message);
+    return;
   }
+  var data = "";
+  if (typeof location !== "undefined") {
+    data = new URLSearchParams(location.search || "").get("data") || "";
+  }
+  if (data) {
+    loadJsonUrl(data, false);
+    return;
+  }
+  var protocol = (typeof location !== "undefined" && location.protocol) || "";
+  if (protocol === "http:" || protocol === "https:") loadJsonUrl("./audit.json", true);
 }
 if (typeof document !== "undefined") {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
