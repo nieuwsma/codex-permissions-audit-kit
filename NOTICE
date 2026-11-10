@@ -1,0 +1,18 @@
+Codex Permissions Audit Kit
+Copyright 2026 Nieuwsma Services LLC
+
+This software is licensed under the Apache License, Version 2.0.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Optional third-party scanners are not part of this repository and are
+not relicensed by it. When you opt in, the runner can download:
+
+- mcp-audit-scanner (PyPI), command mcp-audit
+- AI Access Auditor, https://github.com/dirmedmr-alt/ai-access-auditor
+- AISecurityLabs Codex Security Audit,
+  https://github.com/aisecuritylabs-org/coding-agent-security
+
+Those projects keep their own licenses. This kit does not copy their
+source into the repository.

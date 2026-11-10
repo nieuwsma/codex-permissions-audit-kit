@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Simple local inventory helper (requires Codex CLI on PATH)
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Nieuwsma Services LLC
+# Codex doctor and MCP list only. The full read-only audit is
+# scripts/full-readonly-audit.sh. This script does not change configuration.
 # Usage: ./scripts/local-audit.sh
 
 set -euo pipefail

@@ -1,0 +1,1145 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-04-02T15:00:00Z",
+  "host": {
+    "hostname": "example-mac",
+    "os": "darwin",
+    "platform": "synthetic"
+  },
+  "kit": {
+    "name": "codex-permissions-audit-kit",
+    "pins": {
+      "MCP_AUDIT_VERSION": "0.29.0",
+      "ACCESS_AUDITOR_COMMIT": "f197f39122a21c1169a4ce77e7bfcf58b83cb0cd",
+      "ACCESS_AUDITOR_REPO": "https://github.com/dirmedmr-alt/ai-access-auditor.git",
+      "AISEC_COMMIT": "2031e5da6a0a086a5fbf1dcc0aea09dc0135b5eb",
+      "AISEC_REPO": "https://github.com/aisecuritylabs-org/coding-agent-security.git",
+      "AISEC_YQ_FROM": "yq-go=4.53.3-r1",
+      "AISEC_YQ_TO": "yq-go=4.53.3-r2",
+      "AISEC_IMAGE": "codex-audit:kit-2031e5da"
+    }
+  },
+  "invocation": {
+    "flags": {
+      "with_mcp_audit": false,
+      "with_access_auditor": false,
+      "with_aisec_audit": false
+    },
+    "yq_patched": false
+  },
+  "summary": {
+    "posture": "gap",
+    "headline": "Gaps against the privilege matrix: approval_policy = never; A danger-full-access setting is active (danger-full-access); Trusted home path: /home/example.",
+    "counts": {
+      "ok": 3,
+      "warn": 5,
+      "gap": 10,
+      "info": 2,
+      "skipped": 1
+    },
+    "recommendation_counts": {
+      "critical": 7,
+      "high": 10,
+      "medium": 9,
+      "low": 0
+    },
+    "mcp_server_count": 2,
+    "risky_allow_rule_count": 5,
+    "tools_ran": [
+      "local-audit.sh",
+      "Codex CLI",
+      "mcp-audit",
+      "AI Access Auditor",
+      "Codex Security Audit"
+    ],
+    "tools_skipped": []
+  },
+  "codex": {
+    "cli": {
+      "name": "Codex CLI",
+      "available": true,
+      "status": "ok",
+      "reason": "Synthetic example output. Not a live scan of this machine.",
+      "version": "codex-cli 0.0.0-example",
+      "commands": [
+        {
+          "name": "version",
+          "raw": "raw/codex-version.out",
+          "exit_code": null
+        },
+        {
+          "name": "doctor",
+          "raw": "",
+          "exit_code": null
+        },
+        {
+          "name": "doctor --json",
+          "raw": "",
+          "exit_code": null
+        },
+        {
+          "name": "doctor --no-color --all",
+          "raw": "",
+          "exit_code": null
+        },
+        {
+          "name": "mcp list",
+          "raw": "",
+          "exit_code": null
+        },
+        {
+          "name": "plugin list",
+          "raw": "",
+          "exit_code": null
+        },
+        {
+          "name": "features list",
+          "raw": "",
+          "exit_code": null
+        }
+      ],
+      "doctor_json": null,
+      "raw": [
+        "raw/codex-version.out"
+      ]
+    },
+    "config_path": "~/.codex/config.toml",
+    "config_present": true,
+    "parse_error": null,
+    "posture": {
+      "approval_policy": "never",
+      "approval_policy_kind": "string",
+      "sandbox_mode": "danger-full-access",
+      "default_permissions": ":danger-full-access",
+      "approvals_reviewer": "auto_review",
+      "cli_auth_credentials_store": null,
+      "home_trusted": true
+    },
+    "trusted_projects": [
+      {
+        "path": "/home/example",
+        "trust_level": "trusted",
+        "is_home": true
+      },
+      {
+        "path": "/home/example/src/demo",
+        "trust_level": "trusted",
+        "is_home": false
+      }
+    ],
+    "mcp_servers": [
+      {
+        "name": "github",
+        "transport": "http",
+        "identity": "https://example.invalid/mcp/",
+        "approval_mode": "auto",
+        "tool_approvals": [
+          {
+            "tool": "delete_branch",
+            "mode": "auto"
+          }
+        ],
+        "enabled": true,
+        "secret_env_keys": [
+          "GITHUB_TOKEN"
+        ],
+        "has_bearer_token": false,
+        "risk": "gap",
+        "risk_reasons": [
+          "auto approval on delete_branch"
+        ]
+      },
+      {
+        "name": "localfs",
+        "transport": "stdio",
+        "identity": "npx -y @modelcontextprotocol/server-filesystem /",
+        "approval_mode": "",
+        "tool_approvals": [],
+        "enabled": true,
+        "secret_env_keys": [],
+        "has_bearer_token": false,
+        "risk": "warn",
+        "risk_reasons": [
+          "no approval mode on a write-capable server"
+        ]
+      }
+    ],
+    "plugins": [
+      {
+        "name": "demo@local",
+        "enabled": true
+      }
+    ],
+    "features": [
+      {
+        "name": "skill_mcp_dependency_install",
+        "value": true,
+        "high_privilege": true,
+        "note": "The sample requirements.toml sets skill_mcp_dependency_install to false."
+      }
+    ],
+    "otel": {
+      "present": true,
+      "exporter": "otlp-http",
+      "endpoint_redacted": null,
+      "log_user_prompt": true,
+      "log_agent_responses": null,
+      "notes": [
+        "User prompts are exported."
+      ]
+    }
+  },
+  "rules": {
+    "directory": "~/.codex/rules",
+    "files": [
+      {
+        "path": "default.rules",
+        "parsed": true,
+        "error": null
+      }
+    ],
+    "entries": [
+      {
+        "file": "default.rules",
+        "index": 0,
+        "decision": "allow",
+        "decision_explicit": true,
+        "pattern": [
+          "git",
+          "push"
+        ],
+        "pattern_text": "git push",
+        "justification": "synthetic allow",
+        "flags": [
+          "git_push"
+        ],
+        "risk": "gap",
+        "risk_reasons": [
+          "auto-allow git_push"
+        ]
+      },
+      {
+        "file": "default.rules",
+        "index": 1,
+        "decision": "allow",
+        "decision_explicit": true,
+        "pattern": [
+          "curl"
+        ],
+        "pattern_text": "curl",
+        "justification": "",
+        "flags": [
+          "curl"
+        ],
+        "risk": "gap",
+        "risk_reasons": [
+          "auto-allow curl"
+        ]
+      },
+      {
+        "file": "default.rules",
+        "index": 2,
+        "decision": "allow",
+        "decision_explicit": true,
+        "pattern": [
+          "rm",
+          [
+            "-rf",
+            "-r",
+            "-f"
+          ]
+        ],
+        "pattern_text": "rm {-rf|-r|-f}",
+        "justification": "",
+        "flags": [
+          "rm"
+        ],
+        "risk": "gap",
+        "risk_reasons": [
+          "auto-allow rm"
+        ]
+      },
+      {
+        "file": "default.rules",
+        "index": 3,
+        "decision": "allow",
+        "decision_explicit": true,
+        "pattern": [
+          "npm",
+          "install",
+          "-g"
+        ],
+        "pattern_text": "npm install -g",
+        "justification": "",
+        "flags": [
+          "installer"
+        ],
+        "risk": "gap",
+        "risk_reasons": [
+          "auto-allow installer"
+        ]
+      },
+      {
+        "file": "default.rules",
+        "index": 4,
+        "decision": "allow",
+        "decision_explicit": true,
+        "pattern": [
+          "sudo"
+        ],
+        "pattern_text": "sudo",
+        "justification": "",
+        "flags": [
+          "sudo"
+        ],
+        "risk": "gap",
+        "risk_reasons": [
+          "auto-allow sudo"
+        ]
+      },
+      {
+        "file": "default.rules",
+        "index": 5,
+        "decision": "allow",
+        "decision_explicit": true,
+        "pattern": [
+          "git",
+          "status"
+        ],
+        "pattern_text": "git status",
+        "justification": "",
+        "flags": [],
+        "risk": "ok",
+        "risk_reasons": [
+          "read-only command prefix"
+        ]
+      },
+      {
+        "file": "default.rules",
+        "index": 6,
+        "decision": "forbidden",
+        "decision_explicit": true,
+        "pattern": [
+          "rm"
+        ],
+        "pattern_text": "rm",
+        "justification": "Use git clean",
+        "flags": [
+          "rm"
+        ],
+        "risk": "ok",
+        "risk_reasons": [
+          "forbidden"
+        ]
+      }
+    ]
+  },
+  "requirements": {
+    "locations": [
+      {
+        "id": "etc",
+        "path": "/etc/codex/requirements.toml",
+        "status": "absent",
+        "reason": "File is not present.",
+        "sha256": null,
+        "summary": null
+      },
+      {
+        "id": "mdm",
+        "path": "MDM com.openai.codex requirements_toml_base64",
+        "status": "skipped",
+        "reason": "defaults is only used on macOS for the com.openai.codex MDM payload.",
+        "sha256": null,
+        "summary": null
+      }
+    ]
+  },
+  "opencode": {
+    "path": "~/.config/opencode/opencode.json",
+    "present": true,
+    "parse_error": null,
+    "share": "auto",
+    "permissions": {
+      "bash": "allow",
+      "edit": "ask"
+    },
+    "mcp_servers": [
+      "docs"
+    ],
+    "notes": [
+      "share is auto, so new sessions can be published to a link.",
+      "permission bash is allow."
+    ]
+  },
+  "tools": {
+    "local_audit": {
+      "name": "local-audit.sh",
+      "status": "ok",
+      "reason": "Synthetic example output. Not a live scan of this machine.",
+      "exit_code": 0,
+      "raw": [
+        "raw/local-audit.out"
+      ]
+    },
+    "codex_cli": {
+      "name": "Codex CLI",
+      "available": true,
+      "status": "ok",
+      "reason": "Synthetic example output. Not a live scan of this machine.",
+      "version": "codex-cli 0.0.0-example",
+      "commands": [
+        {
+          "name": "version",
+          "raw": "raw/codex-version.out",
+          "exit_code": null
+        },
+        {
+          "name": "doctor",
+          "raw": "",
+          "exit_code": null
+        },
+        {
+          "name": "doctor --json",
+          "raw": "",
+          "exit_code": null
+        },
+        {
+          "name": "doctor --no-color --all",
+          "raw": "",
+          "exit_code": null
+        },
+        {
+          "name": "mcp list",
+          "raw": "",
+          "exit_code": null
+        },
+        {
+          "name": "plugin list",
+          "raw": "",
+          "exit_code": null
+        },
+        {
+          "name": "features list",
+          "raw": "",
+          "exit_code": null
+        }
+      ],
+      "doctor_json": null,
+      "raw": [
+        "raw/codex-version.out"
+      ]
+    },
+    "mcp_audit": {
+      "name": "mcp-audit",
+      "status": "ok",
+      "reason": "Synthetic example output. Not a live scan of this machine.",
+      "version_pin": "0.29.0",
+      "version_observed": "0.29.0",
+      "grade": "D",
+      "score": 40,
+      "discover_clients": [
+        {
+          "client": "codex",
+          "path": "~/.codex/config.toml"
+        }
+      ],
+      "reach": [
+        {
+          "name": "Codex",
+          "verdict": "not_safe_to_allow",
+          "reasons": [
+            "sandbox_mode is danger-full-access and approval_policy is never."
+          ]
+        }
+      ],
+      "findings": [
+        {
+          "id": "SYN-001",
+          "severity": "HIGH",
+          "title": "Synthetic high finding",
+          "detail": "Example only. This finding is not from a real machine.",
+          "server": "github",
+          "remediation": "Set the GitHub MCP server approval mode to prompt.",
+          "path": "~/.codex/config.toml"
+        }
+      ],
+      "recommendations": [
+        {
+          "id": "TOOL-MCP-SYN-001",
+          "priority": "high",
+          "source": "tool",
+          "tool": "mcp-audit",
+          "title": "Synthetic high finding",
+          "detail": "Set the GitHub MCP server approval mode to prompt.",
+          "rule_id": "TOOL-MCP-SYN-001"
+        },
+        {
+          "id": "TOOL-MCP-REACH-Codex",
+          "priority": "high",
+          "source": "tool",
+          "tool": "mcp-audit",
+          "title": "Codex reach verdict: not_safe_to_allow",
+          "detail": "sandbox_mode is danger-full-access and approval_policy is never.",
+          "rule_id": "TOOL-MCP-REACH-Codex"
+        }
+      ],
+      "raw": [
+        "raw/mcp-scan.out",
+        "raw/mcp-discover.out",
+        "raw/mcp-reach.out"
+      ]
+    },
+    "access_auditor": {
+      "name": "AI Access Auditor",
+      "status": "ok",
+      "reason": "Synthetic example output. Not a live scan of this machine.",
+      "commit_pin": "f197f39122a21c1169a4ce77e7bfcf58b83cb0cd",
+      "commit_observed": "f197f39122a21c1169a4ce77e7bfcf58b83cb0cd",
+      "findings": [
+        {
+          "risk": "high",
+          "agent": "Codex CLI",
+          "category": "Secret in history",
+          "title": "1 secret in a Codex CLI session",
+          "path": "~/.codex/sessions/example.jsonl",
+          "detail": "",
+          "secret": {
+            "type": "OpenAI API key",
+            "date": "2026-04-02",
+            "preview": "sk-••••ab",
+            "path": "~/.codex/sessions/example.jsonl"
+          }
+        },
+        {
+          "risk": "high",
+          "agent": "Codex CLI",
+          "category": "Permission mode",
+          "title": "approval_policy = never",
+          "path": "",
+          "detail": "Runs commands without ever asking",
+          "secret": null
+        }
+      ],
+      "recommendations": [
+        {
+          "id": "TOOL-ACCESS-1",
+          "priority": "high",
+          "source": "tool",
+          "tool": "ai-access-auditor",
+          "title": "1 secret in a Codex CLI session",
+          "detail": "Rotate the OpenAI API key found in ~/.codex/sessions/example.jsonl. The report keeps only the path, type, date, and a masked preview. Last used 2026-04-02.",
+          "rule_id": "TOOL-ACCESS-1"
+        },
+        {
+          "id": "TOOL-ACCESS-2",
+          "priority": "high",
+          "source": "tool",
+          "tool": "ai-access-auditor",
+          "title": "approval_policy = never",
+          "detail": "Runs commands without ever asking",
+          "rule_id": "TOOL-ACCESS-2"
+        }
+      ],
+      "tcc_readable": false,
+      "grant_count": 2,
+      "raw": [
+        "raw/access-auditor.out"
+      ]
+    },
+    "aisec_codex_audit": {
+      "name": "Codex Security Audit",
+      "status": "ok",
+      "reason": "Synthetic example output. Not a live scan of this machine.",
+      "commit_pin": "2031e5da6a0a086a5fbf1dcc0aea09dc0135b5eb",
+      "commit_observed": "2031e5da6a0a086a5fbf1dcc0aea09dc0135b5eb",
+      "summary": {
+        "pass": 1,
+        "warn": 1,
+        "fail": 1,
+        "info": 0
+      },
+      "checks": [
+        {
+          "id": "SYN-FAIL",
+          "status": "FAIL",
+          "title": "approval_policy = never",
+          "detail": "Synthetic example.",
+          "why": "Codex will not ask before running commands.",
+          "guide_step": 4
+        },
+        {
+          "id": "SYN-WARN",
+          "status": "WARN",
+          "title": "Login shells are allowed",
+          "detail": "Synthetic example.",
+          "why": "Shell startup files can export secrets.",
+          "guide_step": 2
+        },
+        {
+          "id": "SYN-PASS",
+          "status": "PASS",
+          "title": "Example passing check",
+          "detail": "",
+          "why": "",
+          "guide_step": 2
+        }
+      ],
+      "recommendations": [
+        {
+          "id": "TOOL-AISEC-SYN-FAIL",
+          "priority": "high",
+          "source": "tool",
+          "tool": "aisec-codex-audit",
+          "title": "approval_policy = never",
+          "detail": "Codex will not ask before running commands.",
+          "rule_id": "TOOL-AISEC-SYN-FAIL"
+        },
+        {
+          "id": "TOOL-AISEC-SYN-WARN",
+          "priority": "medium",
+          "source": "tool",
+          "tool": "aisec-codex-audit",
+          "title": "Login shells are allowed",
+          "detail": "Shell startup files can export secrets.",
+          "rule_id": "TOOL-AISEC-SYN-WARN"
+        }
+      ],
+      "yq_patched": false,
+      "raw": [
+        "raw/aisec.json"
+      ]
+    }
+  },
+  "matrix": [
+    {
+      "id": "KM-APPROVAL",
+      "title": "Approval policy is on-request",
+      "status": "gap",
+      "expected": "approval_policy = on-request",
+      "observed": "approval_policy = never.",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-DANGER-PROFILE",
+      "title": "Danger-full-access is not the default",
+      "status": "gap",
+      "expected": "default_permissions is :workspace or :read-only, and sandbox_mode is not danger-full-access",
+      "observed": "A danger-full-access setting is active (danger-full-access).",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-LEGACY-SANDBOX",
+      "title": "Legacy sandbox_mode is unset",
+      "status": "warn",
+      "expected": "Prefer default_permissions and leave sandbox_mode unset.",
+      "observed": "sandbox_mode = danger-full-access.",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-SANDBOX-AND-PROFILE",
+      "title": "sandbox_mode and default_permissions are not both set",
+      "status": "warn",
+      "expected": "Do not combine them. sandbox_mode wins and permission profiles are ignored.",
+      "observed": "Both are set: sandbox_mode=danger-full-access, default_permissions=:danger-full-access.",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-HOME-TRUSTED",
+      "title": "The home directory is not a trusted project",
+      "status": "gap",
+      "expected": "Do not set trust_level = trusted on $HOME or /.",
+      "observed": "Trusted home path: /home/example",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-TRUSTED-PROJECTS",
+      "title": "Trusted projects are limited to repositories you meant to trust",
+      "status": "info",
+      "expected": "Trust a project only when its .codex layer should load.",
+      "observed": "1 trusted project(s): /home/example/src/demo",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-RULE-GIT-PUSH",
+      "title": "git push is not auto-allowed",
+      "status": "gap",
+      "expected": "decision prompt or forbidden for git push.",
+      "observed": "git push",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-RULE-GIT-RESET",
+      "title": "git reset / --hard is not auto-allowed",
+      "status": "ok",
+      "expected": "decision prompt or forbidden for git reset and --hard.",
+      "observed": "No matching auto-allow rule.",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-RULE-CURL",
+      "title": "curl and wget are not auto-allowed",
+      "status": "gap",
+      "expected": "decision prompt or forbidden for curl and wget.",
+      "observed": "curl",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-RULE-RM",
+      "title": "rm is not auto-allowed",
+      "status": "gap",
+      "expected": "decision prompt or forbidden for rm.",
+      "observed": "rm {-rf|-r|-f}",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-RULE-SUDO",
+      "title": "sudo is not auto-allowed",
+      "status": "gap",
+      "expected": "decision forbidden or prompt for sudo.",
+      "observed": "sudo",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-RULE-INSTALLER",
+      "title": "Package installers are not auto-allowed",
+      "status": "gap",
+      "expected": "decision prompt or forbidden for npm, pip, brew, uv, and similar installers.",
+      "observed": "npm install -g",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-RULE-OTHER-ALLOW",
+      "title": "Other auto-allow rules are read-only",
+      "status": "ok",
+      "expected": "Auto-allow only read-only prefixes such as git status, git diff, ls, or rg.",
+      "observed": "No extra auto-allow rules.",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-MCP-APPROVAL",
+      "title": "MCP servers do not auto-approve writes",
+      "status": "gap",
+      "expected": "Write-capable servers use prompt, writes, or approve.",
+      "observed": "Gap on github",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-FEATURE-INSTALL",
+      "title": "skill_mcp_dependency_install is off",
+      "status": "warn",
+      "expected": "skill_mcp_dependency_install = false, matching the sample requirements.toml.",
+      "observed": "skill_mcp_dependency_install = true.",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-FEATURE-HIGH-PRIV",
+      "title": "High-privilege feature flags are off",
+      "status": "ok",
+      "expected": "computer use, browser use, and bypass-style features stay off.",
+      "observed": "No high-privilege feature is enabled.",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-OTEL-PROMPTS",
+      "title": "OpenTelemetry does not export prompts or responses",
+      "status": "warn",
+      "expected": "Leave log_user_prompt and log_agent_responses unset or false.",
+      "observed": "Enabled: log_user_prompt",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-REQUIREMENTS",
+      "title": "Managed requirements are deployed",
+      "status": "warn",
+      "expected": "A managed requirements.toml is in place, as in the sample.",
+      "observed": "No /etc/codex/requirements.toml and no readable MDM payload.",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-REQUIREMENTS-PROFILES",
+      "title": "Managed requirements omit danger-full-access and never",
+      "status": "skipped",
+      "expected": "The sample allows :read-only and :workspace, and approval on-request only.",
+      "observed": "No managed requirements were available to compare.",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-OPENCODE-SHARE",
+      "title": "OpenCode does not auto-share sessions",
+      "status": "gap",
+      "expected": "share is not auto.",
+      "observed": "opencode.json sets share = auto.",
+      "source": "kit-matrix"
+    },
+    {
+      "id": "KM-PLUGINS",
+      "title": "Enabled plugins are known",
+      "status": "info",
+      "expected": "Each enabled plugin is one you intend to run.",
+      "observed": "Enabled: demo@local",
+      "source": "kit-matrix"
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "H-HOME-AND-RM",
+      "priority": "critical",
+      "source": "heuristic",
+      "tool": null,
+      "title": "Home is trusted and rm is auto-allowed",
+      "detail": "A trusted home plus an rm allow rule can delete files anywhere under the home directory without a prompt. Untrust home and forbid the rm rule.",
+      "rule_id": "H-HOME-AND-RM"
+    },
+    {
+      "id": "H-NEVER-AND-DANGER",
+      "priority": "critical",
+      "source": "heuristic",
+      "tool": null,
+      "title": "Approvals are off and the sandbox is fully open",
+      "detail": "approval_policy is never and a danger-full-access setting is active. Together those settings let Codex run commands without asking and without a sandbox. Change the approval policy to on-request and leave danger-full-access unset.",
+      "rule_id": "H-NEVER-AND-DANGER"
+    },
+    {
+      "id": "KM-APPROVAL",
+      "priority": "critical",
+      "source": "kit-matrix",
+      "tool": null,
+      "title": "Approval policy is on-request",
+      "detail": "Use approval_policy = on-request so Codex asks before it runs a command. The sample requirements allow only on-request.",
+      "rule_id": "KM-APPROVAL"
+    },
+    {
+      "id": "KM-DANGER-PROFILE",
+      "priority": "critical",
+      "source": "kit-matrix",
+      "tool": null,
+      "title": "Danger-full-access is not the default",
+      "detail": "Remove danger-full-access. Use :workspace or :read-only. The sample allowed_permission_profiles list omits :danger-full-access.",
+      "rule_id": "KM-DANGER-PROFILE"
+    },
+    {
+      "id": "KM-HOME-TRUSTED",
+      "priority": "critical",
+      "source": "kit-matrix",
+      "tool": null,
+      "title": "The home directory is not a trusted project",
+      "detail": "Mark the home directory untrusted. A trusted home loads project rules and config for every file under it.",
+      "rule_id": "KM-HOME-TRUSTED"
+    },
+    {
+      "id": "KM-RULE-RM",
+      "priority": "critical",
+      "source": "kit-matrix",
+      "tool": null,
+      "title": "rm is not auto-allowed",
+      "detail": "Change the rm allow rule to forbidden or prompt. The sample requirements.toml forbids rm -rf, rm -r, and rm -f.",
+      "rule_id": "KM-RULE-RM"
+    },
+    {
+      "id": "KM-RULE-SUDO",
+      "priority": "critical",
+      "source": "kit-matrix",
+      "tool": null,
+      "title": "sudo is not auto-allowed",
+      "detail": "Remove the sudo allow rule. The audit itself does not use sudo.",
+      "rule_id": "KM-RULE-SUDO"
+    },
+    {
+      "id": "KM-MCP-APPROVAL",
+      "priority": "high",
+      "source": "kit-matrix",
+      "tool": null,
+      "title": "MCP servers do not auto-approve writes",
+      "detail": "Set default_tools_approval_mode to prompt for those servers, and do not auto-approve destructive tools.",
+      "rule_id": "KM-MCP-APPROVAL"
+    },
+    {
+      "id": "KM-OPENCODE-SHARE",
+      "priority": "high",
+      "source": "kit-matrix",
+      "tool": null,
+      "title": "OpenCode does not auto-share sessions",
+      "detail": "Set OpenCode share to manual so sessions are not published to a link.",
+      "rule_id": "KM-OPENCODE-SHARE"
+    },
+    {
+      "id": "KM-RULE-CURL",
+      "priority": "high",
+      "source": "kit-matrix",
+      "tool": null,
+      "title": "curl and wget are not auto-allowed",
+      "detail": "Change the curl or wget allow rule to prompt or forbidden. An allow rule lets a fetched script run outside the sandbox.",
+      "rule_id": "KM-RULE-CURL"
+    },
+    {
+      "id": "KM-RULE-GIT-PUSH",
+      "priority": "high",
+      "source": "kit-matrix",
+      "tool": null,
+      "title": "git push is not auto-allowed",
+      "detail": "Change the git push allow rule to prompt or forbidden. The sample requirements.toml prompts before git push.",
+      "rule_id": "KM-RULE-GIT-PUSH"
+    },
+    {
+      "id": "KM-RULE-INSTALLER",
+      "priority": "high",
+      "source": "kit-matrix",
+      "tool": null,
+      "title": "Package installers are not auto-allowed",
+      "detail": "Change the installer allow rule to prompt. Installers can fetch and run code.",
+      "rule_id": "KM-RULE-INSTALLER"
+    },
+    {
+      "id": "TOOL-ACCESS-1",
+      "priority": "high",
+      "source": "tool",
+      "tool": "ai-access-auditor",
+      "title": "1 secret in a Codex CLI session",
+      "detail": "Rotate the OpenAI API key found in ~/.codex/sessions/example.jsonl. The report keeps only the path, type, date, and a masked preview. Last used 2026-04-02.",
+      "rule_id": "TOOL-ACCESS-1"
+    },
+    {
+      "id": "TOOL-ACCESS-2",
+      "priority": "high",
+      "source": "tool",
+      "tool": "ai-access-auditor",
+      "title": "approval_policy = never",
+      "detail": "Runs commands without ever asking",
+      "rule_id": "TOOL-ACCESS-2"
+    },
+    {
+      "id": "TOOL-AISEC-SYN-FAIL",
+      "priority": "high",
+      "source": "tool",
+      "tool": "aisec-codex-audit",
+      "title": "approval_policy = never",
+      "detail": "Codex will not ask before running commands.",
+      "rule_id": "TOOL-AISEC-SYN-FAIL"
+    },
+    {
+      "id": "TOOL-MCP-REACH-Codex",
+      "priority": "high",
+      "source": "tool",
+      "tool": "mcp-audit",
+      "title": "Codex reach verdict: not_safe_to_allow",
+      "detail": "sandbox_mode is danger-full-access and approval_policy is never.",
+      "rule_id": "TOOL-MCP-REACH-Codex"
+    },
+    {
+      "id": "TOOL-MCP-SYN-001",
+      "priority": "high",
+      "source": "tool",
+      "tool": "mcp-audit",
+      "title": "Synthetic high finding",
+      "detail": "Set the GitHub MCP server approval mode to prompt.",
+      "rule_id": "TOOL-MCP-SYN-001"
+    },
+    {
+      "id": "H-AUTH-FILE",
+      "priority": "medium",
+      "source": "heuristic",
+      "tool": null,
+      "title": "Codex auth.json is a file on disk",
+      "detail": "auth.json is present. This audit did not open it. Codex can store the login in the system keyring instead (cli_auth_credentials_store = keyring) so other programs are less likely to read the file.",
+      "rule_id": "H-AUTH-FILE"
+    },
+    {
+      "id": "H-AUTO-REVIEW",
+      "priority": "medium",
+      "source": "heuristic",
+      "tool": null,
+      "title": "An automatic reviewer can answer approval prompts",
+      "detail": "approvals_reviewer = auto_review. Prompts can be decided without a person. Prefer the user reviewer when the privilege matrix calls for a prompt.",
+      "rule_id": "H-AUTO-REVIEW"
+    },
+    {
+      "id": "H-OPENCODE-SHELL",
+      "priority": "medium",
+      "source": "heuristic",
+      "tool": null,
+      "title": "OpenCode allows the shell",
+      "detail": "opencode.json sets bash or shell permission to allow. That is broader than a prompt. Set it to ask.",
+      "rule_id": "H-OPENCODE-SHELL"
+    },
+    {
+      "id": "KM-FEATURE-INSTALL",
+      "priority": "medium",
+      "source": "kit-matrix",
+      "tool": null,
+      "title": "skill_mcp_dependency_install is off",
+      "detail": "Set skill_mcp_dependency_install to false so Codex does not install MCP dependencies on its own.",
+      "rule_id": "KM-FEATURE-INSTALL"
+    },
+    {
+      "id": "KM-LEGACY-SANDBOX",
+      "priority": "medium",
+      "source": "kit-matrix",
+      "tool": null,
+      "title": "Legacy sandbox_mode is unset",
+      "detail": "Prefer default_permissions. When sandbox_mode is set, Codex uses the legacy sandbox instead of permission profiles.",
+      "rule_id": "KM-LEGACY-SANDBOX"
+    },
+    {
+      "id": "KM-OTEL-PROMPTS",
+      "priority": "medium",
+      "source": "kit-matrix",
+      "tool": null,
+      "title": "OpenTelemetry does not export prompts or responses",
+      "detail": "Turn off prompt and response export. Those logs can contain source code and credentials.",
+      "rule_id": "KM-OTEL-PROMPTS"
+    },
+    {
+      "id": "KM-REQUIREMENTS",
+      "priority": "medium",
+      "source": "kit-matrix",
+      "tool": null,
+      "title": "Managed requirements are deployed",
+      "detail": "Deploy managed requirements so a user config cannot select danger-full-access or approval never. See examples/requirements.toml.",
+      "rule_id": "KM-REQUIREMENTS"
+    },
+    {
+      "id": "KM-SANDBOX-AND-PROFILE",
+      "priority": "medium",
+      "source": "kit-matrix",
+      "tool": null,
+      "title": "sandbox_mode and default_permissions are not both set",
+      "detail": "Remove sandbox_mode and keep a single default_permissions value.",
+      "rule_id": "KM-SANDBOX-AND-PROFILE"
+    },
+    {
+      "id": "TOOL-AISEC-SYN-WARN",
+      "priority": "medium",
+      "source": "tool",
+      "tool": "aisec-codex-audit",
+      "title": "Login shells are allowed",
+      "detail": "Shell startup files can export secrets.",
+      "rule_id": "TOOL-AISEC-SYN-WARN"
+    }
+  ],
+  "skipped": [
+    {
+      "step": "mdm",
+      "reason": "defaults is only used on macOS for the com.openai.codex MDM payload."
+    },
+    {
+      "step": "KM-REQUIREMENTS-PROFILES",
+      "reason": "No managed requirements were available to compare."
+    }
+  ],
+  "not_covered": [
+    {
+      "item": "macOS TCC and Full Disk Access",
+      "reason": "The audit never prompts for Full Disk Access or any other TCC permission."
+    },
+    {
+      "item": "Applying fixes",
+      "reason": "The runner never calls fix, lock, pin, register, push-nucleus, revoke, redact, or hook install."
+    },
+    {
+      "item": "Live MCP connections",
+      "reason": "mcp-audit --connect is never used, so tool lists are not fetched from running servers."
+    },
+    {
+      "item": "auth.json contents",
+      "reason": "Only size and mtime are recorded. The file is never opened."
+    },
+    {
+      "item": "Elevated system policy",
+      "reason": "sudo is never used. An unreadable requirements file is reported as unreadable."
+    }
+  ],
+  "verification": {
+    "ok": true,
+    "watched": [
+      {
+        "id": "codex-config",
+        "path": "~/.codex/config.toml",
+        "kind": "sha256",
+        "content_read": true,
+        "before": {
+          "present": true,
+          "sha256": "6477f6b5b577c7e6a17a03df366ebfdc3e1fec5b7cf36d9970d19bdfaad90eac"
+        },
+        "after": {
+          "present": true,
+          "sha256": "6477f6b5b577c7e6a17a03df366ebfdc3e1fec5b7cf36d9970d19bdfaad90eac"
+        },
+        "changed": false
+      },
+      {
+        "id": "codex-rules",
+        "path": "~/.codex/rules",
+        "kind": "tree",
+        "content_read": true,
+        "before": {
+          "present": true,
+          "files": {
+            "default.rules": "5bc6bbc314f3ee80fe79eb21496f28ca6678dce567910502697327aecdb04279"
+          }
+        },
+        "after": {
+          "present": true,
+          "files": {
+            "default.rules": "5bc6bbc314f3ee80fe79eb21496f28ca6678dce567910502697327aecdb04279"
+          }
+        },
+        "changed": false
+      },
+      {
+        "id": "opencode",
+        "path": "~/.config/opencode/opencode.json",
+        "kind": "sha256",
+        "content_read": true,
+        "before": {
+          "present": true,
+          "sha256": "219611ead461859fbe185bd5cda5a04cb2723d117d04dcc7fc9274fe9ebc07c9"
+        },
+        "after": {
+          "present": true,
+          "sha256": "219611ead461859fbe185bd5cda5a04cb2723d117d04dcc7fc9274fe9ebc07c9"
+        },
+        "changed": false
+      },
+      {
+        "id": "codex-auth",
+        "path": "~/.codex/auth.json",
+        "kind": "size_mtime",
+        "content_read": false,
+        "before": {
+          "present": true,
+          "size": 55,
+          "mtime_ns": 1794345174476371080
+        },
+        "after": {
+          "present": true,
+          "size": 55,
+          "mtime_ns": 1794345174476371080
+        },
+        "changed": false
+      },
+      {
+        "id": "codex-hooks",
+        "path": "~/.codex/hooks.json",
+        "kind": "sha256",
+        "content_read": false,
+        "before": {
+          "present": false,
+          "sha256": null
+        },
+        "after": {
+          "present": false,
+          "sha256": null
+        },
+        "changed": false
+      }
+    ],
+    "notes": [
+      "auth.json was not opened. Only its size and mtime were compared.",
+      "Watched files were recorded before any scanner ran and compared again after."
+    ]
+  },
+  "redaction": {
+    "applied": true,
+    "replacements": 1
+  }
+}
