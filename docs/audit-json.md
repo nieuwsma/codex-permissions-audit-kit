@@ -27,4 +27,4 @@
 
 Raw scanner output, already redacted, sits next to `audit.json` under `raw/`. Paths inside the JSON point at those files. `auth.json` is never copied.
 
-Open `viewer/index.html` and load `audit.json`. The viewer only renders this document. It does not generate a new report and it does not change configuration.
+The runner also writes `report.html` beside `audit.json`: a copy of `viewer/index.html` with this JSON embedded. Open that file to read the audit. The template’s file picker is only for loading a different JSON file. The page does not change configuration.

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 Nieuwsma Services LLC
+import { spawnSync } from "child_process";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import vm from "vm";
 import { fileURLToPath } from "url";
@@ -62,24 +64,122 @@ function assert(condition, message) {
 assert(text.includes("example-mac"), "hostname");
 assert(text.includes("Effective Codex posture"), "posture section");
 assert(text.includes("Trusted projects"), "projects section");
-assert(text.includes("Auto-allow rules"), "rules section");
-assert(text.includes("MCP servers"), "mcp section");
-assert(text.includes("High-privilege feature flags"), "features section");
-assert(text.includes("Scanner findings"), "tools section");
-assert(text.includes("Privilege matrix"), "matrix section");
+assert(text.includes("Auto-allow approval rules"), "rules section");
+assert(text.includes("MCP servers and plugins"), "mcp section");
+assert(text.includes("High-privilege features on"), "features section");
+assert(text.includes("Privilege matrix comparison"), "matrix section");
 assert(text.includes("Recommendations"), "recommendations section");
-assert(text.includes("Skipped and not covered"), "skipped section");
-assert(text.includes("Read-only verification"), "verification section");
-assert(text.includes("Kit matrix"), "matrix attribution");
-assert(text.includes("mcp-audit") || text.includes("Synthetic high finding"), "mcp finding");
 assert(text.includes("AI Access Auditor"), "access auditor");
 assert(text.includes("Codex Security Audit"), "aisec");
-assert(rendered.includes('class="pill gap"'), "gap pill");
-assert(text.includes("no changes") || text.includes("unchanged"), "verification ok");
+assert(text.includes("Not covered"), "not covered");
+assert(text.includes("Verified no changes"), "verification");
+assert(text.includes("kit matrix"), "matrix attribution");
+assert(text.includes("Wide open"), "overall card");
+assert(text.includes("$HOME trusted"), "top risk card");
+assert(rendered.includes('class="pill bad"'), "bad pill");
+assert(text.includes("read-only, nothing changed"), "header note");
+assert(text.includes("Pushes code to a remote without review"), "git push reason");
+assert(text.includes("Read-only, safe"), "read-only rule reason");
+assert(!text.includes("auto-allow git"), "why column is not tautological");
+assert(html.includes("calc((100% - 24px) / 3)"), "cards lay out three per row");
+const recHtml = rendered.split("<h2>Recommendations</h2>")[1].split("<h2>")[0];
+const visibleItems = (recHtml.split("<details>")[0].match(/<li>/g) || []).length;
+const more = recHtml.match(/<summary>More \((\d+)\)<\/summary>/);
+assert(visibleItems >= 8 && visibleItems <= 12, "visible recommendations " + visibleItems);
+assert(more, "remainder is collapsed");
+const approvalItems = (recHtml.match(/<li>[\s\S]*?<\/li>/g) || []).filter((item) => item.includes("approval_policy"));
+assert(approvalItems.length === 1, "approval recommendations merged");
+assert(!rendered.split("Codex Security Audit")[0].includes(">WARN<"), "non-scanner pills stay lowercase");
+assert(rendered.includes(">FAIL<") && rendered.includes(">PASS<"), "scanner pills stay uppercase");
 
 const hostile = structuredClone(audit);
-hostile.summary.headline = '<img src=x onerror=alert(1)>';
+hostile.host.hostname = '<img src=x onerror=alert(1)>';
 context.renderAudit(hostile);
-assert(report.innerHTML.includes("&lt;img"), "headline is escaped");
+assert(report.innerHTML.includes("&lt;img"), "hostname is escaped");
 assert(!report.innerHTML.includes("<img"), "raw img tag is not injected");
+
+const skipped = structuredClone(audit);
+skipped.tools.access_auditor.status = "skipped";
+skipped.tools.access_auditor.reason = "Node is not installed.";
+skipped.tools.aisec_codex_audit.status = "skipped";
+skipped.tools.aisec_codex_audit.reason = "Docker is not installed.";
+context.renderAudit(skipped);
+assert(report.innerHTML.includes("Node is not installed."), "skipped access reason");
+assert(report.innerHTML.includes("Docker is not installed."), "skipped docker reason");
+assert(!report.innerHTML.includes("What it is"), "skipped tools omit the body");
+
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "audit-report-"));
+const reportPath = path.join(tmp, "report.html");
+const embed = spawnSync("python3", [
+  path.join(root, "scripts/auditkit/cli.py"),
+  "embed-report",
+  "--template", path.join(root, "viewer/index.html"),
+  "--audit", path.join(root, "examples/fixtures/audit.example.json"),
+  "--out", reportPath,
+], { encoding: "utf8" });
+if (embed.status !== 0) {
+  console.error(embed.stderr || embed.stdout);
+  process.exit(1);
+}
+const reportHtml = fs.readFileSync(reportPath, "utf8");
+const dataMatch = reportHtml.match(/<script type="application\/json" id="audit-data">\n([\s\S]*?)\n<\/script>/);
+assert(dataMatch, "embedded audit-data");
+const embeddedAudit = JSON.parse(dataMatch[1]);
+assert(embeddedAudit.host.hostname === "example-mac", "embedded fixture hostname");
+const scriptMatch = reportHtml.match(/<script>\n([\s\S]*?)<\/script>/);
+assert(scriptMatch, "copied viewer script");
+const embeddedReport = new El("report");
+const embeddedError = new El("error");
+const auditData = new El("audit-data");
+auditData.textContent = dataMatch[1];
+const embeddedDoc = {
+  readyState: "complete",
+  getElementById(id) {
+    return { file: new El("file"), drop: new El("drop"), report: embeddedReport, error: embeddedError, "audit-data": auditData }[id] || null;
+  },
+  addEventListener() {},
+};
+const embeddedContext = {
+  console,
+  URLSearchParams,
+  document: embeddedDoc,
+  location: { search: "", protocol: "file:" },
+  window: { addEventListener() {} },
+};
+embeddedContext.globalThis = embeddedContext;
+vm.createContext(embeddedContext);
+vm.runInContext(scriptMatch[1], embeddedContext, { filename: "report.html" });
+const embeddedText = embeddedReport.innerHTML.replace(/<[^>]+>/g, " ");
+assert(embeddedText.includes("example-mac"), "embedded report rendered the fixture");
+assert(embeddedText.includes("Privilege matrix"), "embedded report shows the matrix");
+assert(embeddedReport.innerHTML.includes('class="pill bad"'), "embedded report shows a gap");
+
+const httpReport = new El("report");
+const httpError = new El("error");
+const httpContext = {
+  console,
+  URLSearchParams,
+  document: {
+    readyState: "complete",
+    getElementById(id) {
+      return { file: new El("file"), drop: new El("drop"), report: httpReport, error: httpError }[id] || null;
+    },
+    addEventListener() {},
+  },
+  location: { search: "", protocol: "http:" },
+  window: { addEventListener() {} },
+  fetch(url) {
+    httpContext.fetched = url;
+    return Promise.resolve({
+      ok: true,
+      json() { return Promise.resolve(audit); },
+    });
+  },
+};
+httpContext.globalThis = httpContext;
+vm.createContext(httpContext);
+vm.runInContext(match[1], httpContext, { filename: "viewer/index.html" });
+await new Promise((resolve) => setTimeout(resolve, 30));
+assert(httpContext.fetched === "./audit.json", "http viewer requests ./audit.json");
+assert(httpReport.innerHTML.includes("example-mac"), "http viewer rendered ./audit.json");
 console.log("viewer fixture rendered");

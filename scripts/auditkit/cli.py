@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from auditkit.assemble import assemble, dumps  # noqa: E402
 from auditkit.pins import PINS  # noqa: E402
 from auditkit.redact import redact_bytes  # noqa: E402
+from auditkit.report_html import write_report  # noqa: E402
 from auditkit.snapshot import snapshot  # noqa: E402
 
 
@@ -412,6 +413,11 @@ def cmd_example(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_embed_report(args: argparse.Namespace) -> int:
+    write_report(Path(args.template), Path(args.audit), Path(args.out))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Read-only Codex permissions audit helpers.")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -470,6 +476,12 @@ def build_parser() -> argparse.ArgumentParser:
     example = sub.add_parser("example")
     example.add_argument("--out", required=True)
     example.set_defaults(func=cmd_example)
+
+    embed = sub.add_parser("embed-report")
+    embed.add_argument("--template", required=True)
+    embed.add_argument("--audit", required=True)
+    embed.add_argument("--out", required=True)
+    embed.set_defaults(func=cmd_embed_report)
     return parser
 
 

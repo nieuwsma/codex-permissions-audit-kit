@@ -19,8 +19,9 @@ usage() {
 Usage: scripts/full-readonly-audit.sh [options]
 
 Read Codex settings and, where the tools are already available, the optional
-scanners. Write reports/<hostname>-<UTC time>/audit.json. Do not change
-configuration.
+scanners. Write reports/<hostname>-<UTC time>/audit.json and report.html.
+Do not change configuration. report.html is viewer/index.html with the
+redacted audit embedded, so it opens in a browser with no file picker.
 
 Options:
   --home PATH             Home directory to audit (default: $HOME)
@@ -35,6 +36,8 @@ Options:
                           the vanished yq pin, build the image, and run it
   --hostname NAME         Name recorded in audit.json
   --generated-at ISO-8601 Timestamp recorded in audit.json
+  --open                  Open report.html in a browser (macOS open, Linux
+                          xdg-open). Off unless you pass this flag.
   -h, --help              Show this help
 
 Already-installed tools run without a flag. A missing tool is skipped.
@@ -62,6 +65,7 @@ fi
 WITH_MCP=0
 WITH_ACCESS=0
 WITH_AISEC=0
+OPEN_REPORT=0
 HOME_OVERRIDE=""
 REPORT_DIR=""
 PROJECT=""
@@ -100,6 +104,10 @@ while [ $# -gt 0 ]; do
       ;;
     --with-aisec-audit)
       WITH_AISEC=1
+      shift
+      ;;
+    --open)
+      OPEN_REPORT=1
       shift
       ;;
     -h|--help)
@@ -589,7 +597,35 @@ set +e
 assemble_status=$?
 set -e
 
+if [ -f "$REPORT_DIR/audit.json" ]; then
+  "${PY[@]}" embed-report \
+    --template "$ROOT/viewer/index.html" \
+    --audit "$REPORT_DIR/audit.json" \
+    --out "$REPORT_DIR/report.html"
+fi
+
+open_report() {
+  local target="$1"
+  if [ "$(uname)" = "Darwin" ]; then
+    if command -v open >/dev/null 2>&1; then
+      open "$target" || log "open could not launch a browser."
+      return 0
+    fi
+  elif command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$target" >/dev/null 2>&1 || log "xdg-open could not launch a browser."
+    return 0
+  fi
+  log "No browser launcher found (open on macOS, xdg-open on Linux)."
+  return 0
+}
+
 log "Wrote $REPORT_DIR/audit.json"
-log "Open viewer/index.html and load that file."
+if [ -f "$REPORT_DIR/report.html" ]; then
+  log "Open this file in a browser:"
+  printf '%s\n' "$REPORT_DIR/report.html"
+  if [ "$OPEN_REPORT" -eq 1 ]; then
+    open_report "$REPORT_DIR/report.html"
+  fi
+fi
 cleanup
 exit "$assemble_status"
