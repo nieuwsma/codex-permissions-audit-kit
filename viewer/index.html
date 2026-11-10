@@ -12,9 +12,25 @@ Copyright 2026 Nieuwsma Services LLC
 body{font-family:-apple-system,system-ui,sans-serif;max-width:960px;margin:40px auto;padding:0 20px;color:#1d1d1f;line-height:1.5}
 h1{font-size:26px;margin-bottom:4px}.sub{color:#6e6e73;margin-top:0}
 h2{margin-top:36px;border-bottom:1px solid #e5e5ea;padding-bottom:6px}
-table{border-collapse:collapse;width:100%;margin:12px 0}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #eee;vertical-align:top}
-th{background:#f5f5f7}code{background:#f2f2f5;padding:1px 5px;border-radius:4px;font-size:13px}
-.pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:12px;font-weight:600}
+.table-wrap{overflow-x:auto;max-width:100%;margin:12px 0}
+table{border-collapse:collapse;width:100%;min-width:40rem;margin:0;table-layout:fixed}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #eee;vertical-align:top;overflow-wrap:break-word}
+th{background:#f5f5f7}
+td.fit,th.fit{white-space:nowrap;width:1%}
+code{background:#f2f2f5;padding:1px 5px;border-radius:4px;font-size:13px;white-space:nowrap}
+code.break,code.path{white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+code.ident{white-space:normal;overflow-wrap:normal;word-break:normal}
+.pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap}
+@media (max-width:700px){
+  body{margin:24px auto;padding:0 16px}
+  .table-wrap{overflow:visible}
+  table,thead,tbody,tr,th,td{display:block;width:auto;min-width:0}
+  thead{display:none}
+  tr{border-bottom:1px solid #eee;padding:8px 0}
+  td{border-bottom:0;padding:2px 0}
+  td.fit,th.fit{white-space:normal;width:auto}
+  td::before{content:attr(data-label);display:block;font-weight:600;color:#6e6e73;font-size:12px}
+}
 .ok{background:#e3f6e8;color:#1a7f37}.warn{background:#fff4dc;color:#9a6700}.bad{background:#ffe5e5;color:#c62828}.na{background:#eee;color:#555}
 .cards{display:flex;gap:12px;flex-wrap:wrap}.card{box-sizing:border-box;flex:1 1 calc((100% - 24px) / 3);min-width:calc((100% - 24px) / 3);max-width:calc((100% - 24px) / 3);background:#f5f5f7;border-radius:10px;padding:14px}
 .card b{display:block;font-size:22px}
@@ -40,8 +56,13 @@ function pill(tone, text) {
   var known = { ok: "ok", warn: "warn", bad: "bad", na: "na" };
   return '<span class="pill ' + (known[tone] || "na") + '">' + esc(text) + "</span>";
 }
-function code(value) {
-  return "<code>" + esc(value) + "</code>";
+function code(value, breakAnywhere) {
+  var text = esc(value);
+  if (breakAnywhere) return "<code class=\"break\">" + text + "</code>";
+  if (String(value).indexOf("/") >= 0 || String(value).charAt(0) === "~") {
+    return "<code class=\"path\">" + text.replace(/\//g, "/<wbr>") + "</code>";
+  }
+  return "<code>" + text + "</code>";
 }
 var CODE_WORDS = [
   "approval_policy", "sandbox_mode", "default_permissions", "skill_mcp_dependency_install",
@@ -49,10 +70,17 @@ var CODE_WORDS = [
   "auto_review", "log_user_prompt", "log_agent_responses", "cli_auth_credentials_store",
   "trust_level", "--network none", "--read-only", "--cap-drop ALL", "node server.js --scan"
 ];
+function soften(text) {
+  return String(text || "").replace(/([A-Za-z0-9_.:-]+)=([A-Za-z0-9_.:-]+)/g, "$1 = $2");
+}
 function codeify(text) {
-  var safe = esc(text);
-  CODE_WORDS.forEach(function (word) {
-    safe = safe.split(esc(word)).join(code(word));
+  var safe = esc(soften(text));
+  CODE_WORDS.slice().sort(function (a, b) { return b.length - a.length; }).forEach(function (word) {
+    var token = esc(word);
+    safe = safe.split(/(<code[^>]*>[\s\S]*?<\/code>)/).map(function (part) {
+      if (part.indexOf("<code") === 0) return part;
+      return part.split(token).join(code(word));
+    }).join("");
   });
   return safe;
 }
@@ -79,12 +107,22 @@ function scannerWord(status) {
   if (s === "WARN" || s === "WARNING") return "WARN";
   return "N/A";
 }
-function table(headers, rows) {
+function table(headers, rows, cols) {
   if (!rows.length) return "<p>None recorded.</p>";
-  return "<table><thead><tr>" + headers.map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") +
-    "</tr></thead><tbody>" + rows.map(function (row) {
-      return "<tr>" + row.map(function (cell) { return "<td>" + cell + "</td>"; }).join("") + "</tr>";
-    }).join("") + "</tbody></table>";
+  var colgroup = "";
+  if (cols && cols.length) {
+    colgroup = "<colgroup>" + cols.map(function (col) {
+      return "<col" + (col.w ? " style=\"width:" + col.w + "\"" : "") + ">";
+    }).join("") + "</colgroup>";
+  }
+  function fit(i) { return cols && cols[i] && cols[i].fit ? " class=\"fit\"" : ""; }
+  var head = headers.map(function (h, i) { return "<th" + fit(i) + ">" + esc(h) + "</th>"; }).join("");
+  var body = rows.map(function (row) {
+    return "<tr>" + row.map(function (cell, i) {
+      return "<td" + fit(i) + " data-label=\"" + esc(headers[i]) + "\">" + cell + "</td>";
+    }).join("") + "</tr>";
+  }).join("");
+  return "<div class=\"table-wrap\"><table>" + colgroup + "<thead><tr>" + head + "</tr></thead><tbody>" + body + "</tbody></table></div>";
 }
 function findCheck(audit, id) {
   var checks = audit.matrix || [];
@@ -252,12 +290,12 @@ function rulesHtml(audit) {
     return [code(row.pattern_text || "(unparsed)"), pill(toneOf(risk), risk) + " " + esc(row.decision || "allow"), esc(ruleWhy(row))];
   });
   return "<h2>Auto-allow approval rules</h2><p>An allow decision runs the matching command outside the sandbox. If a prefix rule omits the decision, Codex treats it as allow. Forbidden and prompt rules stay in the table so the safe ones are visible too.</p>" +
-    table(["Rule", "Risk", "Why"], rows);
+    table(["Rule", "Risk", "Why"], rows, [{w:"26%"}, {w:"8.5rem", fit:true}, {}]);
 }
 function mcpHtml(audit) {
   var rows = [];
   (((audit.codex || {}).mcp_servers) || []).forEach(function (server) {
-    var value = (server.identity ? code(server.identity) + " · " : "") + "approval " + esc(server.approval_mode || "unset");
+    var value = (server.identity ? code(server.identity, true) + " · " : "") + "approval " + esc(server.approval_mode || "unset");
     if ((server.risk_reasons || []).length) value += ". " + esc(server.risk_reasons.join("; "));
     if (!server.enabled) value += ". Disabled.";
     rows.push([esc(server.name), value]);
@@ -267,7 +305,7 @@ function mcpHtml(audit) {
   });
   var opencode = (audit.opencode || {}).mcp_servers || [];
   opencode.forEach(function (name) { rows.push(["OpenCode MCP " + esc(name), "Named in opencode.json."]); });
-  return "<h2>MCP servers and plugins</h2>" + table(["Item", "Value"], rows);
+  return "<h2>MCP servers and plugins</h2>" + table(["Item", "Value"], rows, [{w:"24%"}, {}]);
 }
 function featuresHtml(audit) {
   var on = (((audit.codex || {}).features) || []).filter(function (row) { return row.value === true || row.high_privilege; });
@@ -278,12 +316,17 @@ function featuresHtml(audit) {
   if (notes.length) html += " " + esc(notes[0]);
   return html + "</p>";
 }
+function areaLabel(text) {
+  return esc(text).replace(/[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+/g, function (word) {
+    return "<code class=\"ident\">" + word.replace(/_/g, "_<wbr>") + "</code>";
+  });
+}
 function matrixHtml(audit) {
   var host = ((audit.host || {}).hostname) || "this host";
   var rows = (audit.matrix || []).map(function (row) {
-    return [esc(row.title), codeify(row.expected || ""), codeify(row.observed || ""), pill(toneOf(row.status), wordOf(row.status))];
+    return [areaLabel(row.title), codeify(row.expected || ""), codeify(row.observed || ""), pill(toneOf(row.status), wordOf(row.status))];
   });
-  return "<h2>Privilege matrix comparison</h2>" + table(["Area", "Matrix says", host, "Status"], rows);
+  return "<h2>Privilege matrix comparison</h2>" + table(["Area", "Matrix says", host, "Status"], rows, [{w:"24%"}, {}, {}, {w:"7rem", fit:true}]);
 }
 function ruleWhy(row) {
   var flags = row.flags || [];
@@ -438,7 +481,7 @@ function accessHtml(audit) {
     "<p><b>What it is.</b> A local inventory of grants given to coding agents. " + repoLink(repo, "AI Access Auditor") + ".</p>" +
     "<p><b>How it ran.</b> " + code("node server.js --scan") + " at commit " + code(tool.commit_observed || tool.commit_pin || pins.ACCESS_AUDITOR_COMMIT || "unrecorded") + ". Its data directory stayed inside the report. Revoke and hook install were not used.</p>" +
     "<p><b>What it checked.</b> Codex approval, trusted folders, MCP servers, and secrets in session history (path, type, date, and a masked preview only). It does not ask for Full Disk Access. See " + repoLink(repo, "the repository") + ".</p>" +
-    table(["Risk", "Finding", "This tool's recommendation (not applied)"], rows) +
+    table(["Risk", "Finding", "This tool's recommendation (not applied)"], rows, [{w:"6.5rem", fit:true}, {w:"34%"}, {}]) +
     verificationParagraph(audit);
 }
 function dockerHtml(audit) {
@@ -456,7 +499,7 @@ function dockerHtml(audit) {
     "<p><b>How it ran.</b> The pinned commit " + code(tool.commit_observed || tool.commit_pin || pins.AISEC_COMMIT || "unrecorded") + " ran with " + code("--network none") + ", " + code("--read-only") + ", " + code("--cap-drop ALL") + ", and " + code("--security-opt no-new-privileges") + ". auth.json, history, and logs were not mounted." + esc(yq) + "</p>" +
     "<p><b>What it checked.</b> config.toml, rules, hooks, shell startup files, and the project directory. See " + repoLink(repo, "the repository") + ".</p>" +
     "<p>" + pill("bad", "FAIL") + " " + pill("warn", "WARN") + " " + pill("ok", "PASS") + " " + pill("na", "N/A") + "</p>" +
-    table(["Result", "Finding", "Suggested"], rows) +
+    table(["Result", "Finding", "Suggested"], rows, [{w:"6.5rem", fit:true}, {w:"32%"}, {}]) +
     verificationParagraph(audit);
 }
 function notCoveredHtml(audit) {
@@ -475,7 +518,7 @@ function renderHtml(audit) {
   return "<h1>Codex permissions audit: " + esc(host) + "</h1>" +
     '<p class="sub">' + esc(formatWhen(audit.generated_at)) + " · " + esc(version) + " · " + esc(note) + "</p>" +
     '<div class="cards">' + cards.map(card).join("") + "</div>" +
-    "<h2>Effective Codex posture</h2>" + table(["Setting", "Value", "Status"], postureRows(audit)) +
+    "<h2>Effective Codex posture</h2>" + table(["Setting", "Value", "Status"], postureRows(audit), [{w:"24%"}, {}, {w:"7rem", fit:true}]) +
     trustedHtml(audit) +
     rulesHtml(audit) +
     mcpHtml(audit) +
