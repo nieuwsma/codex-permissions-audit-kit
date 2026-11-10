@@ -1,0 +1,48 @@
+# Example enterprise requirements.toml
+# Deploy via ChatGPT Business/Enterprise Codex Policies page,
+# MDM (requirements_toml_base64), or /etc/codex/requirements.toml.
+# Higher-precedence layers override. Requires Codex >= 0.138.0 for full permission-profile support.
+
+# Force approvals; block "never"
+allowed_approval_policies = ["on-request"]
+
+# Prefer modern permission profiles over legacy sandbox_mode
+# (remove any sandbox_mode / sandbox_workspace_write from user configs)
+default_permissions = ":workspace"
+
+[allowed_permission_profiles]
+":read-only" = true
+":workspace" = true
+# ":danger-full-access" intentionally omitted → denied
+
+# Optional custom tighter profile (define under [permissions.<name>] if needed)
+# acme_readonly_plus_docs = true
+
+# Restrict web search
+allowed_web_search_modes = ["cached", "disabled"]
+
+# MCP allowlist — servers are enabled only when name AND identity match
+[mcp_servers.github]
+identity = { url = "https://api.githubcopilot.com/mcp/" }
+
+[mcp_servers.context7]
+identity = { command = "npx" }
+
+[mcp_servers.linear]
+identity = { url = "https://mcp.linear.app/mcp" }
+
+# Example: block a known high-risk stdio server
+# [mcp_servers.jira]
+# identity = { command = "npx" }   # tighten further with structured args if needed
+
+# Optional command rules (most-restrictive wins)
+[rules]
+prefix_rules = [
+  { pattern = [{ token = "rm" }, { any_of = ["-rf", "-r", "-f"] }], decision = "forbidden", justification = "Use git clean or scoped deletes instead." },
+  { pattern = [{ token = "git" }, { any_of = ["push", "reset", "--hard"] }], decision = "prompt", justification = "Review before mutating remote or history." },
+]
+
+# Pin features if desired
+[features]
+skill_mcp_dependency_install = false
+network_proxy = true
