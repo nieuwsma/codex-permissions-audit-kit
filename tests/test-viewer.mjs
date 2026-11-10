@@ -87,10 +87,16 @@ const visibleItems = (recHtml.split("<details>")[0].match(/<li>/g) || []).length
 const more = recHtml.match(/<summary>More \((\d+)\)<\/summary>/);
 assert(visibleItems >= 8 && visibleItems <= 12, "visible recommendations " + visibleItems);
 assert(more, "remainder is collapsed");
-const approvalItems = (recHtml.match(/<li>[\s\S]*?<\/li>/g) || []).filter((item) => item.includes("approval_policy"));
+const approvalItems = (recHtml.replace(/<wbr>/g, "").match(/<li>[\s\S]*?<\/li>/g) || []).filter((item) => item.includes("approval_policy"));
 assert(approvalItems.length === 1, "approval recommendations merged");
 assert(!rendered.split("Codex Security Audit")[0].includes(">WARN<"), "non-scanner pills stay lowercase");
 assert(rendered.includes(">FAIL<") && rendered.includes(">PASS<"), "scanner pills stay uppercase");
+assert(rendered.includes("<colgroup>"), "tables declare columns");
+assert(rendered.includes("class=\"fit\""), "pill columns do not wrap");
+assert(rendered.includes("class=\"break\""), "long commands can break");
+assert(rendered.includes("<code>sandbox_mode</code> = <code>danger-full-access</code>"), "assignments wrap at spaces");
+assert(rendered.includes("<code>default_permissions</code> = <code>:danger-full-access</code>"), "permission value stays one token");
+assert(!rendered.includes("sandbox_mode=danger-full-access"), "no glued assignment");
 
 const hostile = structuredClone(audit);
 hostile.host.hostname = '<img src=x onerror=alert(1)>';
