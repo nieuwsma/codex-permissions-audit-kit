@@ -9,114 +9,25 @@ Copyright 2026 Nieuwsma Services LLC
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Codex permissions audit</title>
 <style>
-  :root {
-    --ink: #1c1915;
-    --muted: #5c564c;
-    --paper: #f4f0e6;
-    --card: #fffdf8;
-    --line: #e2d9c8;
-    --accent: #8c3a2f;
-    --ok: #146c36;
-    --ok-bg: #e5f4ea;
-    --warn: #8a5a00;
-    --warn-bg: #fff3d6;
-    --gap: #9f2d20;
-    --gap-bg: #fde4e1;
-    --info: #234e70;
-    --info-bg: #e7eef6;
-    --skip: #555;
-    --skip-bg: #eeeae3;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--paper);
-    color: var(--ink);
-    font: 16px/1.5 "Segoe UI", "Helvetica Neue", sans-serif;
-  }
-  header {
-    background: var(--ink);
-    color: var(--paper);
-    padding: 28px 32px 22px;
-  }
-  header h1 { margin: 0 0 6px; font-size: 28px; font-weight: 650; letter-spacing: -0.02em; }
-  header p { margin: 0; max-width: 46rem; color: #e6dfd2; }
-  main { max-width: 1080px; margin: 0 auto; padding: 22px 20px 64px; }
-  a { color: var(--accent); }
-  nav { display: flex; flex-wrap: wrap; gap: 10px 14px; margin: 8px 0 18px; }
-  nav a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
-  .loader, section {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 16px 18px;
-    margin: 14px 0;
-  }
-  .drop {
-    border: 1.5px dashed #b7ab96;
-    border-radius: 12px;
-    padding: 22px;
-    text-align: center;
-    background: #faf7f0;
-  }
-  .drop.hot { border-color: var(--accent); background: #fff6f2; }
-  button, .file {
-    font: inherit;
-    background: var(--ink);
-    color: var(--paper);
-    border: 0;
-    border-radius: 999px;
-    padding: 8px 14px;
-    cursor: pointer;
-  }
-  input[type="file"] { margin-top: 10px; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-  .card { background: var(--paper); border-radius: 12px; padding: 12px 14px; }
-  .card b { display: block; font-size: 26px; line-height: 1.2; }
-  .card span { color: var(--muted); font-size: 13px; }
-  h2 { margin: 0 0 10px; font-size: 20px; }
-  h3 { margin: 16px 0 8px; font-size: 16px; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; vertical-align: top; padding: 8px 6px; border-bottom: 1px solid var(--line); }
-  th { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-  .pill {
-    display: inline-block;
-    border-radius: 999px;
-    padding: 1px 8px;
-    font-size: 12px;
-    font-weight: 650;
-    background: var(--skip-bg);
-    color: var(--skip);
-  }
-  .pill.ok { background: var(--ok-bg); color: var(--ok); }
-  .pill.warn, .pill.medium { background: var(--warn-bg); color: var(--warn); }
-  .pill.gap, .pill.critical, .pill.high, .pill.error { background: var(--gap-bg); color: var(--gap); }
-  .pill.info, .pill.low { background: var(--info-bg); color: var(--info); }
-  .pill.skipped { background: var(--skip-bg); color: var(--skip); }
-  .empty, .muted { color: var(--muted); }
-  .banner { border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
-  .banner.ok { background: var(--ok-bg); color: var(--ok); }
-  .banner.gap { background: var(--gap-bg); color: var(--gap); }
-  .error { color: var(--gap); font-weight: 650; }
-  code { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 0.92em; }
-  ul { margin: 8px 0; padding-left: 18px; }
-  footer { color: var(--muted); font-size: 13px; margin-top: 8px; }
+body{font-family:-apple-system,system-ui,sans-serif;max-width:960px;margin:40px auto;padding:0 20px;color:#1d1d1f;line-height:1.5}
+h1{font-size:26px;margin-bottom:4px}.sub{color:#6e6e73;margin-top:0}
+h2{margin-top:36px;border-bottom:1px solid #e5e5ea;padding-bottom:6px}
+table{border-collapse:collapse;width:100%;margin:12px 0}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #eee;vertical-align:top}
+th{background:#f5f5f7}code{background:#f2f2f5;padding:1px 5px;border-radius:4px;font-size:13px}
+.pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:12px;font-weight:600}
+.ok{background:#e3f6e8;color:#1a7f37}.warn{background:#fff4dc;color:#9a6700}.bad{background:#ffe5e5;color:#c62828}.na{background:#eee;color:#555}
+.cards{display:flex;gap:12px;flex-wrap:wrap}.card{flex:1;min-width:170px;background:#f5f5f7;border-radius:10px;padding:14px}
+.card b{display:block;font-size:22px}
 </style>
 </head>
 <body>
-<header>
-  <h1>Codex permissions audit</h1>
-  <p>A read-only view of one <code>audit.json</code> file. This page does not change configuration.</p>
-</header>
-<main>
-  <div class="loader" id="drop">
-    <p>This page opens the saved audit on its own. Choose a file only if nothing is embedded and <code>audit.json</code> is not beside this page.</p>
-    <label>Choose a file <input id="file" type="file" accept="application/json,.json"></label>
-    <p class="muted">You can also drop a file here. Over HTTP, <code>?data=</code> loads a path, and <code>./audit.json</code> loads when it is present.</p>
-  </div>
-  <p id="error" class="error"></p>
-  <div id="report"></div>
-</main>
+<div id="drop">
+  <p>This page opens a saved audit on its own. Choose a file only when nothing is embedded and <code>audit.json</code> is not beside this page.</p>
+  <label>Choose a file <input id="file" type="file" accept="application/json,.json"></label>
+  <p class="sub">You can also drop a file here. Over HTTP, <code>?data=</code> loads a path, and <code>./audit.json</code> loads when it is present.</p>
+</div>
+<div id="error"></div>
+<div id="report"></div>
 <script type="application/json" id="audit-data"></script>
 <script>
 "use strict";
@@ -125,193 +36,341 @@ function esc(value) {
     return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
   });
 }
-function pill(status) {
-  var known = { ok: 1, warn: 1, gap: 1, info: 1, skipped: 1, critical: 1, high: 1, medium: 1, low: 1, error: 1 };
-  var key = known[status] ? status : "info";
-  return '<span class="pill ' + key + '">' + esc(status || "info") + "</span>";
+function pill(tone, text) {
+  var known = { ok: "ok", warn: "warn", bad: "bad", na: "na" };
+  return '<span class="pill ' + (known[tone] || "na") + '">' + esc(text) + "</span>";
 }
-function cell(value) {
-  if (value && typeof value === "object" && value.html) return value.html;
-  return esc(value);
+function code(value) {
+  return "<code>" + esc(value) + "</code>";
+}
+var CODE_WORDS = [
+  "approval_policy", "sandbox_mode", "default_permissions", "skill_mcp_dependency_install",
+  "danger-full-access", ":danger-full-access", ":workspace", ":read-only", "on-request",
+  "auto_review", "log_user_prompt", "log_agent_responses", "cli_auth_credentials_store",
+  "trust_level", "--network none", "--read-only", "--cap-drop ALL", "node server.js --scan"
+];
+function codeify(text) {
+  var safe = esc(text);
+  CODE_WORDS.forEach(function (word) {
+    safe = safe.split(esc(word)).join(code(word));
+  });
+  return safe;
+}
+function toneOf(status) {
+  var s = String(status || "").toLowerCase();
+  if (s === "ok" || s === "pass") return "ok";
+  if (s === "warn" || s === "warning" || s === "medium") return "warn";
+  if (s === "gap" || s === "bad" || s === "fail" || s === "critical" || s === "high" || s === "error") return "bad";
+  return "na";
+}
+function wordOf(status) {
+  var s = String(status || "").toLowerCase();
+  if (s === "pass") return "PASS";
+  if (s === "fail") return "FAIL";
+  if (s === "warn" || s === "warning") return "WARN";
+  if (s === "gap") return "gap";
+  if (s === "high") return "high";
+  if (s === "medium") return "medium";
+  if (s === "low") return "low";
+  if (s === "info") return "info";
+  if (s === "skipped") return "skipped";
+  if (s === "ok") return "ok";
+  return s || "n/a";
 }
 function table(headers, rows) {
-  if (!rows || !rows.length) return '<p class="empty">None recorded.</p>';
-  var head = headers.map(function (item) { return "<th>" + esc(item) + "</th>"; }).join("");
-  var body = rows.map(function (row) {
-    return "<tr>" + row.map(function (item) { return "<td>" + cell(item) + "</td>"; }).join("") + "</tr>";
-  }).join("");
-  return "<table><thead><tr>" + head + "</tr></thead><tbody>" + body + "</tbody></table>";
+  if (!rows.length) return "<p>None recorded.</p>";
+  return "<table><thead><tr>" + headers.map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") +
+    "</tr></thead><tbody>" + rows.map(function (row) {
+      return "<tr>" + row.map(function (cell) { return "<td>" + cell + "</td>"; }).join("") + "</tr>";
+    }).join("") + "</tbody></table>";
 }
-function section(id, title, body) {
-  return '<section id="' + id + '"><h2>' + esc(title) + "</h2>" + body + "</section>";
+function findCheck(audit, id) {
+  var checks = audit.matrix || [];
+  for (var i = 0; i < checks.length; i++) if (checks[i].id === id) return checks[i];
+  return null;
 }
-function list(items) {
-  if (!items || !items.length) return '<p class="empty">None recorded.</p>';
-  return "<ul>" + items.map(function (item) { return "<li>" + esc(item) + "</li>"; }).join("") + "</ul>";
+function formatWhen(iso) {
+  var match = String(iso || "").match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
+  return match ? match[1] + " " + match[2] + " UTC" : (iso ? String(iso) : "date not recorded");
 }
 function sourceLabel(rec) {
-  if (!rec) return "";
-  if (rec.source === "kit-matrix") return "Kit matrix";
-  if (rec.source === "heuristic") return "Heuristic";
-  if (rec.source === "tool") return rec.tool || "Tool";
-  return rec.source || "";
+  if (!rec || rec.source === "kit-matrix") return "kit matrix";
+  if (rec.source === "heuristic") return "heuristic";
+  return "scanner";
 }
-function sideText(item, side) {
-  if (!side || side.present === false || side.present == null) return "absent";
-  if (item.kind === "size_mtime") {
-    return "size " + side.size + ", mtime " + side.mtime_ns + (item.content_read ? "" : " (contents not read)");
+function card(item) {
+  return '<div class="card">' + pill(item.tone, item.label) + "<b>" + esc(item.headline) + '</b><p class="sub">' + item.detail + "</p></div>";
+}
+function overallCard(audit) {
+  var approval = ((audit.codex || {}).posture || {}).approval_policy;
+  var sandbox = ((audit.codex || {}).posture || {}).sandbox_mode || "";
+  var perms = ((audit.codex || {}).posture || {}).default_permissions || "";
+  var home = ((audit.codex || {}).posture || {}).home_trusted;
+  var danger = /danger-full-access/.test(sandbox) || /danger-full-access/.test(perms);
+  var never = approval === "never" || approval === "on-failure";
+  var gaps = (audit.matrix || []).filter(function (row) { return row.status === "gap"; });
+  var warns = (audit.matrix || []).filter(function (row) { return row.status === "warn"; });
+  if (never || danger || home) {
+    var bits = [];
+    if (never) bits.push("approvals are off");
+    if (danger) bits.push("the sandbox is fully open");
+    if (home) bits.push("the home directory is trusted");
+    return { tone: "bad", label: "Overall", headline: "Wide open", detail: esc(bits.join(", ").replace(/^./, function (c) { return c.toUpperCase(); })) + "." };
   }
-  if (item.kind === "tree") {
-    var names = Object.keys(side.files || {});
-    return names.length + " file(s): " + names.join(", ");
+  if (!gaps.length && warns.some(function (row) { return row.id === "KM-REQUIREMENTS"; })) {
+    return { tone: "warn", label: "Overall", headline: "Tight, not locked", detail: "Defaults are safe, but nothing enforces them." };
   }
-  return side.sha256 ? String(side.sha256).slice(0, 12) : "unreadable";
+  if (gaps.length) return { tone: "warn", label: "Overall", headline: "Gaps to close", detail: esc(String(gaps.length) + " matrix gaps still need a decision.") };
+  if (warns.length) return { tone: "warn", label: "Overall", headline: "Review warnings", detail: esc(String(warns.length) + " checks need a look.") };
+  return { tone: "ok", label: "Overall", headline: "Matches the matrix", detail: "The recorded settings match the checks that ran." };
+}
+function topRiskCard(audit) {
+  var projects = ((audit.codex || {}).trusted_projects) || [];
+  var home = projects.filter(function (row) { return row.is_home && row.trust_level === "trusted"; });
+  var posture = (audit.codex || {}).posture || {};
+  if (home.length) return { tone: "bad", label: "Top risk", headline: "$HOME trusted", detail: code(home[0].path) + " is a trusted project." };
+  if (/danger-full-access/.test(posture.sandbox_mode || "") || /danger-full-access/.test(posture.default_permissions || "")) {
+    return { tone: "bad", label: "Top risk", headline: "No sandbox", detail: code("danger-full-access") + " is the default." };
+  }
+  if (posture.approval_policy === "never") return { tone: "bad", label: "Top risk", headline: "Approvals off", detail: code("approval_policy") + " is never." };
+  var gap = (audit.matrix || []).filter(function (row) { return row.status === "gap"; })[0];
+  if (gap) return { tone: "bad", label: "Top risk", headline: gap.title, detail: codeify(gap.observed || "") };
+  return { tone: "ok", label: "Top risk", headline: "None standing out", detail: "No matrix gap outranks the others." };
+}
+function mcpCard(audit) {
+  var tool = ((audit.tools || {}).mcp_audit) || {};
+  if (tool.status !== "ok") return { tone: "na", label: "skipped", headline: "mcp-audit", detail: esc(tool.reason || "mcp-audit was not run.") };
+  var grade = tool.grade || "—";
+  var tone = grade === "A" || grade === "B" ? "ok" : grade === "C" ? "warn" : "bad";
+  var score = tool.score == null ? "" : " · " + tool.score + "/100";
+  var servers = ((audit.codex || {}).mcp_servers || []).length;
+  var findings = (tool.findings || []).length;
+  return { tone: tone, label: "mcp-audit", headline: grade + score, detail: esc(servers + " MCP server" + (servers === 1 ? "" : "s") + ", " + findings + " finding" + (findings === 1 ? "" : "s") + ".") };
+}
+function allowCard(audit) {
+  var risky = (((audit.rules || {}).entries) || []).filter(function (row) {
+    return row.decision === "allow" && (row.risk === "gap" || row.risk === "warn");
+  });
+  if (!risky.length) return { tone: "ok", label: "Auto-allow", headline: "No risky rules", detail: "Allow rules are read-only, or there are none." };
+  var names = risky.slice(0, 3).map(function (row) { return String(row.pattern_text || "").split("{")[0].trim(); });
+  var more = risky.length > 3 ? ", +" + (risky.length - 3) : "";
+  return {
+    tone: risky.some(function (row) { return row.risk === "gap"; }) ? "bad" : "warn",
+    label: "Auto-allow",
+    headline: risky.length + " risky rules",
+    detail: esc(names.join(", ") + more)
+  };
+}
+function dockerCard(audit) {
+  var tool = ((audit.tools || {}).aisec_codex_audit) || {};
+  if (tool.status !== "ok") return { tone: "na", label: "skipped", headline: "Docker audit", detail: esc(tool.reason || "The Docker audit was not run.") };
+  var summary = tool.summary || {};
+  var fail = summary.fail || 0;
+  var warn = summary.warn || 0;
+  return {
+    tone: fail ? "bad" : warn ? "warn" : "ok",
+    label: "Docker audit",
+    headline: fail + " FAIL, " + warn + " WARN",
+    detail: esc((summary.pass || 0) + " PASS, " + (summary.info || 0) + " INFO.")
+  };
+}
+function accessCard(audit) {
+  var tool = ((audit.tools || {}).access_auditor) || {};
+  if (tool.status !== "ok") return { tone: "na", label: "skipped", headline: "Access Auditor", detail: esc(tool.reason || "AI Access Auditor was not run.") };
+  var findings = tool.findings || [];
+  var high = findings.filter(function (row) { return row.risk === "high"; }).length;
+  var count = tool.grant_count == null ? findings.length : tool.grant_count;
+  return {
+    tone: high ? "bad" : findings.length ? "warn" : "ok",
+    label: "Access Auditor",
+    headline: count + " grants",
+    detail: esc(high + " high.")
+  };
+}
+function postureRows(audit) {
+  var posture = (audit.codex || {}).posture || {};
+  var otel = (audit.codex || {}).otel || {};
+  var req = ((audit.requirements || {}).locations) || [];
+  var presentReq = req.filter(function (row) { return row.status === "present"; });
+  var aisec = ((audit.tools || {}).aisec_codex_audit) || {};
+  var shellCheck = (aisec.checks || []).filter(function (row) { return /shell/i.test(row.title || ""); })[0];
+  var approval = posture.approval_policy || "not set";
+  var sandbox = posture.sandbox_mode || "not set";
+  var perms = posture.default_permissions || "not set";
+  var network = "Not recorded in config.";
+  var networkTone = "na";
+  if (otel.log_user_prompt === true || otel.log_agent_responses === true) {
+    network = "OpenTelemetry exports prompts or responses.";
+    networkTone = "warn";
+  } else if (otel.present) {
+    network = "An exporter is configured" + (otel.endpoint_redacted ? " at " + otel.endpoint_redacted : "") + ".";
+    networkTone = "ok";
+  }
+  var reqText = presentReq.length ? "Managed requirements are present." : "No managed requirements.toml was found.";
+  var reqTone = presentReq.length ? "ok" : (req.some(function (row) { return row.status === "unreadable"; }) ? "na" : "warn");
+  var shellText = "Not checked.";
+  var shellTone = "na";
+  if (aisec.status === "ok" && shellCheck) {
+    shellText = shellCheck.title + (shellCheck.detail ? ". " + shellCheck.detail : "");
+    shellTone = toneOf(shellCheck.status);
+  } else if (aisec.status === "ok") {
+    shellText = "The Docker audit did not flag a login shell.";
+    shellTone = "ok";
+  }
+  var store = posture.cli_auth_credentials_store || "file";
+  return [
+    ["Approval policy", codeify(approval + (approval === "never" ? ". Codex runs commands without asking." : approval === "on-request" ? ". Codex asks before a command runs." : ".")), pill(toneOf((findCheck(audit, "KM-APPROVAL") || {}).status || (approval === "on-request" ? "ok" : "warn")), wordOf((findCheck(audit, "KM-APPROVAL") || {}).status || (approval === "on-request" ? "ok" : "warn")))],
+    ["Sandbox", codeify(String(sandbox)), pill(toneOf((findCheck(audit, "KM-DANGER-PROFILE") || {}).status || "na"), wordOf((findCheck(audit, "KM-DANGER-PROFILE") || {}).status || "n/a"))],
+    ["Default permissions", perms === "not set" ? esc(perms) : code(perms), pill(/danger-full-access/.test(perms) ? "bad" : perms === "not set" ? "na" : "ok", /danger-full-access/.test(perms) ? "gap" : perms === "not set" ? "n/a" : "ok")],
+    ["Network", esc(network), pill(networkTone, networkTone === "na" ? "n/a" : networkTone === "warn" ? "warn" : "ok")],
+    ["Managed requirements", esc(reqText), pill(reqTone, reqTone === "ok" ? "ok" : reqTone === "warn" ? "warn" : "n/a")],
+    ["Login shell", esc(shellText), pill(shellTone, shellTone === "na" ? "n/a" : shellTone)],
+    ["Approvals reviewer", codeify(posture.approvals_reviewer || "user (default)"), pill(posture.approvals_reviewer === "auto_review" ? "warn" : "ok", posture.approvals_reviewer === "auto_review" ? "warn" : "ok")],
+    ["Credential store", codeify(store === "keyring" ? "keyring" : store + ". auth.json stays on disk unless the store is keyring."), pill(store === "keyring" ? "ok" : "warn", store === "keyring" ? "ok" : "warn")],
+    ["Home directory", posture.home_trusted ? "Trusted. Project layers load for the whole home directory." : "Not a trusted project.", pill(posture.home_trusted ? "bad" : "ok", posture.home_trusted ? "gap" : "ok")]
+  ];
+}
+function trustedHtml(audit) {
+  var projects = ((audit.codex || {}).trusted_projects) || [];
+  var home = projects.filter(function (row) { return row.is_home && row.trust_level === "trusted"; });
+  var others = projects.filter(function (row) { return row.trust_level === "trusted" && !row.is_home; });
+  var html = "<h2>Trusted projects</h2>";
+  if (home.length) html += "<p>" + pill("bad", "gap") + " The home directory is trusted. " + code(home[0].path) + " loads project rules for every file under it.</p>";
+  else html += "<p>" + pill("ok", "ok") + " The home directory is not a trusted project.</p>";
+  if (others.length) html += "<p>Other trusted paths: " + others.map(function (row) { return code(row.path); }).join(", ") + ".</p>";
+  else html += "<p>No other trusted projects are recorded.</p>";
+  var untrusted = projects.filter(function (row) { return row.trust_level && row.trust_level !== "trusted"; });
+  if (untrusted.length) html += "<p>Marked untrusted: " + untrusted.map(function (row) { return code(row.path); }).join(", ") + ".</p>";
+  return html;
+}
+function rulesHtml(audit) {
+  var entries = ((audit.rules || {}).entries) || [];
+  var rows = entries.map(function (row) {
+    var short = row.risk === "gap" ? "high" : row.risk === "warn" ? "warn" : "ok";
+    var why = ((row.risk_reasons || []).join("; ") || row.justification || "").replace(/_/g, " ");
+    return [code(row.pattern_text || "(unparsed)"), pill(toneOf(row.risk), short) + " " + esc(row.decision || "allow"), esc(why)];
+  });
+  return "<h2>Auto-allow approval rules</h2><p>An allow decision runs the matching command outside the sandbox. If a prefix rule omits the decision, Codex treats it as allow. Forbidden and prompt rules stay in the table so the safe ones are visible too.</p>" +
+    table(["Rule", "Risk", "Why"], rows);
+}
+function mcpHtml(audit) {
+  var rows = [];
+  (((audit.codex || {}).mcp_servers) || []).forEach(function (server) {
+    var value = (server.identity ? code(server.identity) + " · " : "") + "approval " + esc(server.approval_mode || "unset");
+    if ((server.risk_reasons || []).length) value += ". " + esc(server.risk_reasons.join("; "));
+    if (!server.enabled) value += ". Disabled.";
+    rows.push([esc(server.name), value]);
+  });
+  (((audit.codex || {}).plugins) || []).forEach(function (plugin) {
+    rows.push(["Plugin " + esc(plugin.name), plugin.enabled ? "Enabled." : "Disabled."]);
+  });
+  var opencode = (audit.opencode || {}).mcp_servers || [];
+  opencode.forEach(function (name) { rows.push(["OpenCode MCP " + esc(name), "Named in opencode.json."]); });
+  return "<h2>MCP servers and plugins</h2>" + table(["Item", "Value"], rows);
+}
+function featuresHtml(audit) {
+  var on = (((audit.codex || {}).features) || []).filter(function (row) { return row.value === true || row.high_privilege; });
+  var html = "<h2>High-privilege features on (product defaults)</h2><p>";
+  if (!on.length) return html + "No high-privilege feature flags are turned on.</p>";
+  html += "These flags are on: " + on.map(function (row) { return code(row.name); }).join(", ") + ".";
+  var notes = on.map(function (row) { return row.note; }).filter(Boolean);
+  if (notes.length) html += " " + esc(notes[0]);
+  return html + "</p>";
+}
+function matrixHtml(audit) {
+  var host = ((audit.host || {}).hostname) || "this host";
+  var rows = (audit.matrix || []).map(function (row) {
+    return [esc(row.title), codeify(row.expected || ""), codeify(row.observed || ""), pill(toneOf(row.status), wordOf(row.status))];
+  });
+  return "<h2>Privilege matrix comparison</h2>" + table(["Area", "Matrix says", host, "Status"], rows);
+}
+function recommendationsHtml(audit) {
+  var items = audit.recommendations || [];
+  if (!items.length) return "<h2>Recommendations</h2><p>No recommendations were derived.</p>";
+  var html = "<h2>Recommendations</h2><ol>";
+  items.forEach(function (rec) {
+    html += "<li>" + pill("na", sourceLabel(rec)) + " <b>" + codeify(rec.title || "") + "</b> " + codeify(rec.detail || "") + "</li>";
+  });
+  return html + "</ol>";
+}
+function verificationParagraph(audit) {
+  var verification = audit.verification || {};
+  if (verification.ok) {
+    return "<p><b>Verified no changes.</b> Read-only verification compared hashes of config.toml, rules, opencode.json, and hooks.json, and the size and mtime of auth.json. auth.json was not opened. Nothing changed.</p>";
+  }
+  var changed = (verification.watched || []).filter(function (row) { return row.changed; });
+  return "<p><b>Read-only verification failed.</b> A watched file changed" +
+    (changed.length ? ": " + changed.map(function (row) { return code(row.path); }).join(", ") : "") + ".</p>";
+}
+function repoLink(url, label) {
+  return '<a href="' + esc(url) + '">' + esc(label) + "</a>";
+}
+function accessHtml(audit) {
+  var tool = ((audit.tools || {}).access_auditor) || { status: "skipped", reason: "AI Access Auditor was not run." };
+  if (tool.status !== "ok") return "<h2>AI Access Auditor " + pill("na", "skipped") + "</h2><p>" + esc(tool.reason || "Not run.") + "</p>";
+  var pins = (audit.kit || {}).pins || {};
+  var repo = pins.ACCESS_AUDITOR_REPO || "https://github.com/dirmedmr-alt/ai-access-auditor";
+  var rows = (tool.findings || []).map(function (finding) {
+    var rec = (tool.recommendations || []).filter(function (item) { return item.title === finding.title; })[0];
+    var where = finding.path ? " " + code(finding.path) : "";
+    var secret = finding.secret ? " " + esc(finding.secret.type || "") + (finding.secret.date ? ", " + esc(finding.secret.date) : "") : "";
+    return [pill(toneOf(finding.risk), wordOf(finding.risk)), esc(finding.title || "") + secret + where, codeify((rec && rec.detail) || "Recorded only. Nothing was applied.")];
+  });
+  return "<h2>AI Access Auditor " + pill("ok", "read-only") + "</h2>" +
+    "<p><b>What it is.</b> A local inventory of grants given to coding agents. " + repoLink(repo, "AI Access Auditor") + ".</p>" +
+    "<p><b>How it ran.</b> " + code("node server.js --scan") + " at commit " + code(tool.commit_observed || tool.commit_pin || pins.ACCESS_AUDITOR_COMMIT || "unrecorded") + ". Its data directory stayed inside the report. Revoke and hook install were not used.</p>" +
+    "<p><b>What it checked.</b> Codex approval, trusted folders, MCP servers, and secrets in session history (path, type, date, and a masked preview only). It does not ask for Full Disk Access. See " + repoLink(repo, "the repository") + ".</p>" +
+    table(["Risk", "Finding", "This tool's recommendation (not applied)"], rows) +
+    verificationParagraph(audit);
+}
+function dockerHtml(audit) {
+  var tool = ((audit.tools || {}).aisec_codex_audit) || { status: "skipped", reason: "The Docker audit was not run." };
+  if (tool.status !== "ok") return "<h2>Codex Security Audit (AISecurityLabs.org, Docker) " + pill("na", "skipped") + "</h2><p>" + esc(tool.reason || "Not run.") + "</p>";
+  var pins = (audit.kit || {}).pins || {};
+  var repo = pins.AISEC_REPO || "https://github.com/aisecuritylabs-org/coding-agent-security";
+  var rows = (tool.checks || []).map(function (check) {
+    var rec = (tool.recommendations || []).filter(function (item) { return item.title === check.title; })[0];
+    return [pill(toneOf(check.status), wordOf(check.status)), esc(check.title || ""), codeify((rec && rec.detail) || check.why || check.detail || "No change was applied.")];
+  });
+  var yq = (audit.invocation || {}).yq_patched ? " The Alpine yq pin was rewritten from r1 to r2 inside the report checkout before the image build." : "";
+  return "<h2>Codex Security Audit (AISecurityLabs.org, Docker) " + pill("ok", "read-only") + "</h2>" +
+    "<p><b>What it is.</b> An offline container check of Codex settings against the AISecurityLabs hardening guide. " + repoLink(repo, "coding-agent-security") + ".</p>" +
+    "<p><b>How it ran.</b> The pinned commit " + code(tool.commit_observed || tool.commit_pin || pins.AISEC_COMMIT || "unrecorded") + " ran with " + code("--network none") + ", " + code("--read-only") + ", " + code("--cap-drop ALL") + ", and " + code("--security-opt no-new-privileges") + ". auth.json, history, and logs were not mounted." + esc(yq) + "</p>" +
+    "<p><b>What it checked.</b> config.toml, rules, hooks, shell startup files, and the project directory. See " + repoLink(repo, "the repository") + ".</p>" +
+    "<p>" + pill("bad", "FAIL") + " " + pill("warn", "WARN") + " " + pill("ok", "PASS") + " " + pill("na", "N/A") + "</p>" +
+    table(["Result", "Finding", "Suggested"], rows) +
+    verificationParagraph(audit);
+}
+function notCoveredHtml(audit) {
+  var items = audit.not_covered || [];
+  var text = items.length
+    ? items.map(function (item) { return item.reason || item.item; }).join(" ")
+    : "Nothing further was listed as out of scope.";
+  return "<h2>Not covered</h2><p>" + esc(text) + "</p>";
 }
 function renderHtml(audit) {
   audit = audit || {};
-  var summary = audit.summary || {};
-  var counts = summary.counts || {};
-  var recCounts = summary.recommendation_counts || {};
-  var codex = audit.codex || {};
-  var posture = codex.posture || {};
-  var verification = audit.verification || {};
-  var cards = [
-    ["Posture", summary.posture || ""],
-    ["Gaps", counts.gap || 0],
-    ["Warnings", counts.warn || 0],
-    ["MCP servers", summary.mcp_server_count || 0],
-    ["Risky allow rules", summary.risky_allow_rule_count || 0],
-    ["Critical recommendations", recCounts.critical || 0],
-    ["Verification", verification.ok ? "no changes" : "changed"]
-  ];
-  var cardHtml = '<div class="cards">' + cards.map(function (pair) {
-    return '<div class="card"><b>' + esc(pair[1]) + "</b><span>" + esc(pair[0]) + "</span></div>";
-  }).join("") + "</div>";
-  var host = audit.host || {};
-  var intro = "<p>" + esc(summary.headline || "") + "</p><p class=\"muted\">" +
-    esc(host.hostname || "") + " · " + esc(audit.generated_at || "") + " · " +
-    esc((codex.cli || {}).version || "codex version not recorded") + "</p>" + cardHtml;
-
-  var postureRows = [
-    ["Approval policy", posture.approval_policy || posture.approval_policy_kind || ""],
-    ["Sandbox mode", posture.sandbox_mode || "unset"],
-    ["Default permissions", posture.default_permissions || "unset"],
-    ["Approvals reviewer", posture.approvals_reviewer || "unset"],
-    ["Credential store", posture.cli_auth_credentials_store || "unset"],
-    ["Home trusted", posture.home_trusted ? "yes" : "no"],
-    ["Config", codex.config_path || ""],
-    ["Parse error", codex.parse_error || ""]
-  ];
-  var postureHtml = table(["Setting", "Value"], postureRows.map(function (row) { return row; }));
-
-  var projectRows = (codex.trusted_projects || []).map(function (row) {
-    return [row.path, row.trust_level || "", row.is_home ? "yes" : "no"];
-  });
-  var ruleRows = ((audit.rules || {}).entries || []).map(function (row) {
-    return [
-      row.file,
-      row.pattern_text,
-      row.decision,
-      { html: pill(row.risk) },
-      (row.risk_reasons || []).join("; ")
-    ];
-  });
-  var mcpRows = (codex.mcp_servers || []).map(function (row) {
-    return [
-      row.name,
-      row.identity,
-      row.approval_mode || "unset",
-      { html: pill(row.risk) },
-      (row.risk_reasons || []).join("; ")
-    ];
-  });
-  var pluginRows = (codex.plugins || []).map(function (row) {
-    return [row.name, row.enabled ? "enabled" : "disabled"];
-  });
-  var featureRows = (codex.features || []).map(function (row) {
-    return [row.name, String(row.value), row.high_privilege ? "yes" : "no", row.note || ""];
-  });
-  var otel = codex.otel || {};
-  var otelHtml = "<p>Exporter: " + esc(otel.exporter || "unset") +
-    ". Endpoint: " + esc(otel.endpoint_redacted || "none") +
-    ". log_user_prompt: " + esc(otel.log_user_prompt) +
-    ". log_agent_responses: " + esc(otel.log_agent_responses) + ".</p>" +
-    list(otel.notes || []);
-
-  var tools = audit.tools || {};
-  var toolOrder = ["mcp_audit", "access_auditor", "aisec_codex_audit"];
-  var toolHtml = toolOrder.map(function (key) {
-    var tool = tools[key] || {};
-    var findings = tool.findings || tool.checks || [];
-    var findingRows = findings.map(function (row) {
-      if (row.secret) {
-        var secret = row.secret;
-        return [row.agent || "", row.category || row.status || "", row.title || "", secret.path || "", (secret.type || "") + " " + (secret.date || "") + " " + (secret.preview || "")];
-      }
-      return [
-        row.agent || row.server || row.id || "",
-        row.category || row.severity || row.status || "",
-        row.title || "",
-        row.path || "",
-        row.detail || row.why || ""
-      ];
-    });
-    var recRows = (tool.recommendations || []).map(function (row) {
-      return [{ html: pill(row.priority) }, sourceLabel(row), row.title, row.detail];
-    });
-    var extra = "";
-    if (tool.grade) extra += "<p>Grade " + esc(tool.grade) + (tool.score == null ? "" : " (" + esc(tool.score) + ")") + ".</p>";
-    if (tool.summary) {
-      extra += "<p>Pass " + esc(tool.summary.pass) + ", warn " + esc(tool.summary.warn) + ", fail " + esc(tool.summary.fail) + ", info " + esc(tool.summary.info) + ".</p>";
-    }
-    if (tool.reach && tool.reach.length) {
-      extra += table(["Agent", "Verdict", "Reasons"], tool.reach.map(function (row) {
-        return [row.name, row.verdict, (row.reasons || []).join(" ")];
-      }));
-    }
-    return "<h3>" + esc(tool.name || key) + " " + pill(tool.status || "skipped") + "</h3>" +
-      "<p class=\"muted\">" + esc(tool.reason || "") + "</p>" + extra +
-      "<h3>Findings</h3>" + table(["Where", "Kind", "Title", "Path", "Detail"], findingRows) +
-      "<h3>Recommendations from this tool</h3>" + table(["Priority", "Source", "Title", "Detail"], recRows);
-  }).join("");
-
-  var matrixRows = (audit.matrix || []).map(function (row) {
-    return [row.id, row.title, { html: pill(row.status) }, row.expected, row.observed];
-  });
-  var recRows = (audit.recommendations || []).map(function (row) {
-    return [{ html: pill(row.priority) }, sourceLabel(row), row.rule_id || row.id, row.title, row.detail];
-  });
-  var skippedRows = (audit.skipped || []).map(function (row) { return [row.step, row.reason]; });
-  var coveredRows = (audit.not_covered || []).map(function (row) { return [row.item, row.reason]; });
-  var verifyRows = (verification.watched || []).map(function (row) {
-    return [
-      row.path,
-      row.kind,
-      sideText(row, row.before),
-      sideText(row, row.after),
-      { html: pill(row.changed ? "gap" : "ok") }
-    ];
-  });
-  var banner = verification.ok
-    ? '<div class="banner ok">Read-only verification passed. Watched files were unchanged.</div>'
-    : '<div class="banner gap">Read-only verification failed. A watched file changed during the audit.</div>';
-
-  return intro +
-    section("posture", "Effective Codex posture", postureHtml) +
-    section("projects", "Trusted projects", table(["Path", "Trust", "Is home"], projectRows)) +
-    section("rules", "Auto-allow rules", table(["File", "Pattern", "Decision", "Risk", "Why"], ruleRows)) +
-    section("mcp", "MCP servers and plugins", "<h3>MCP servers</h3>" + table(["Name", "Identity", "Approval", "Risk", "Why"], mcpRows) + "<h3>Plugins</h3>" + table(["Name", "State"], pluginRows)) +
-    section("features", "High-privilege feature flags", table(["Flag", "Value", "High privilege", "Note"], featureRows) + otelHtml) +
-    section("tools", "Scanner findings", toolHtml) +
-    section("matrix", "Privilege matrix", table(["Check", "Title", "Result", "Expected", "Observed"], matrixRows)) +
-    section("recommendations", "Recommendations", "<p class=\"muted\">Each item is tagged Kit matrix, a scanner name, or Heuristic. The page does not apply them.</p>" + table(["Priority", "Source", "Rule", "Title", "Detail"], recRows)) +
-    section("skipped", "Skipped and not covered", "<h3>Skipped</h3>" + table(["Step", "Reason"], skippedRows) + "<h3>Not covered</h3>" + table(["Item", "Reason"], coveredRows)) +
-    section("verification", "Read-only verification", banner + table(["Path", "Kind", "Before", "After", "Changed"], verifyRows) + list(verification.notes || [])) +
-    '<footer>Redaction replacements recorded: ' + esc((audit.redaction || {}).replacements) + ". Schema " + esc(audit.schema_version || "") + ".</footer>";
+  var host = (audit.host || {}).hostname || "unknown host";
+  var version = ((audit.codex || {}).cli || {}).version || "Codex version not recorded";
+  var note = (audit.verification || {}).ok ? "read-only, nothing changed" : "read-only check failed: a watched file changed";
+  var cards = [overallCard(audit), mcpCard(audit), topRiskCard(audit), allowCard(audit), dockerCard(audit), accessCard(audit)];
+  return "<h1>Codex permissions audit: " + esc(host) + "</h1>" +
+    '<p class="sub">' + esc(formatWhen(audit.generated_at)) + " · " + esc(version) + " · " + esc(note) + "</p>" +
+    '<div class="cards">' + cards.map(card).join("") + "</div>" +
+    "<h2>Effective Codex posture</h2>" + table(["Setting", "Value", "Status"], postureRows(audit)) +
+    trustedHtml(audit) +
+    rulesHtml(audit) +
+    mcpHtml(audit) +
+    featuresHtml(audit) +
+    matrixHtml(audit) +
+    recommendationsHtml(audit) +
+    accessHtml(audit) +
+    dockerHtml(audit) +
+    notCoveredHtml(audit);
 }
 function showError(message) {
   var node = document.getElementById("error");
-  if (node) node.textContent = message;
+  if (node) node.textContent = message || "";
 }
 function renderAudit(audit, mount) {
   var root = mount || document.getElementById("report");
@@ -321,11 +380,8 @@ function renderAudit(audit, mount) {
 function readFile(file) {
   var reader = new FileReader();
   reader.onload = function () {
-    try {
-      renderAudit(JSON.parse(String(reader.result || "")));
-    } catch (err) {
-      showError("That file is not JSON: " + err.message);
-    }
+    try { renderAudit(JSON.parse(String(reader.result || ""))); }
+    catch (err) { showError("That file is not JSON: " + err.message); }
   };
   reader.readAsText(file);
 }
@@ -354,20 +410,13 @@ function loadJsonUrl(url, missingIsQuiet) {
 function init() {
   var input = document.getElementById("file");
   var drop = document.getElementById("drop");
-  if (input) {
-    input.addEventListener("change", function () {
-      if (input.files && input.files[0]) readFile(input.files[0]);
-    });
-  }
+  if (input) input.addEventListener("change", function () {
+    if (input.files && input.files[0]) readFile(input.files[0]);
+  });
   if (drop) {
-    drop.addEventListener("dragover", function (event) {
-      event.preventDefault();
-      drop.classList.add("hot");
-    });
-    drop.addEventListener("dragleave", function () { drop.classList.remove("hot"); });
+    drop.addEventListener("dragover", function (event) { event.preventDefault(); });
     drop.addEventListener("drop", function (event) {
       event.preventDefault();
-      drop.classList.remove("hot");
       var file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
       if (file) readFile(file);
     });
@@ -375,6 +424,7 @@ function init() {
   try {
     var embedded = readEmbedded();
     if (embedded) {
+      if (drop && drop.style) drop.style.display = "none";
       renderAudit(embedded);
       return;
     }
@@ -383,13 +433,8 @@ function init() {
     return;
   }
   var data = "";
-  if (typeof location !== "undefined") {
-    data = new URLSearchParams(location.search || "").get("data") || "";
-  }
-  if (data) {
-    loadJsonUrl(data, false);
-    return;
-  }
+  if (typeof location !== "undefined") data = new URLSearchParams(location.search || "").get("data") || "";
+  if (data) { loadJsonUrl(data, false); return; }
   var protocol = (typeof location !== "undefined" && location.protocol) || "";
   if (protocol === "http:" || protocol === "https:") loadJsonUrl("./audit.json", true);
 }

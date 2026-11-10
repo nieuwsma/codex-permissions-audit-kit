@@ -64,26 +64,36 @@ function assert(condition, message) {
 assert(text.includes("example-mac"), "hostname");
 assert(text.includes("Effective Codex posture"), "posture section");
 assert(text.includes("Trusted projects"), "projects section");
-assert(text.includes("Auto-allow rules"), "rules section");
-assert(text.includes("MCP servers"), "mcp section");
-assert(text.includes("High-privilege feature flags"), "features section");
-assert(text.includes("Scanner findings"), "tools section");
-assert(text.includes("Privilege matrix"), "matrix section");
+assert(text.includes("Auto-allow approval rules"), "rules section");
+assert(text.includes("MCP servers and plugins"), "mcp section");
+assert(text.includes("High-privilege features on"), "features section");
+assert(text.includes("Privilege matrix comparison"), "matrix section");
 assert(text.includes("Recommendations"), "recommendations section");
-assert(text.includes("Skipped and not covered"), "skipped section");
-assert(text.includes("Read-only verification"), "verification section");
-assert(text.includes("Kit matrix"), "matrix attribution");
-assert(text.includes("mcp-audit") || text.includes("Synthetic high finding"), "mcp finding");
 assert(text.includes("AI Access Auditor"), "access auditor");
 assert(text.includes("Codex Security Audit"), "aisec");
-assert(rendered.includes('class="pill gap"'), "gap pill");
-assert(text.includes("no changes") || text.includes("unchanged"), "verification ok");
+assert(text.includes("Not covered"), "not covered");
+assert(text.includes("Verified no changes"), "verification");
+assert(text.includes("kit matrix"), "matrix attribution");
+assert(text.includes("Wide open"), "overall card");
+assert(text.includes("$HOME trusted"), "top risk card");
+assert(rendered.includes('class="pill bad"'), "bad pill");
+assert(text.includes("read-only, nothing changed"), "header note");
 
 const hostile = structuredClone(audit);
-hostile.summary.headline = '<img src=x onerror=alert(1)>';
+hostile.host.hostname = '<img src=x onerror=alert(1)>';
 context.renderAudit(hostile);
-assert(report.innerHTML.includes("&lt;img"), "headline is escaped");
+assert(report.innerHTML.includes("&lt;img"), "hostname is escaped");
 assert(!report.innerHTML.includes("<img"), "raw img tag is not injected");
+
+const skipped = structuredClone(audit);
+skipped.tools.access_auditor.status = "skipped";
+skipped.tools.access_auditor.reason = "Node is not installed.";
+skipped.tools.aisec_codex_audit.status = "skipped";
+skipped.tools.aisec_codex_audit.reason = "Docker is not installed.";
+context.renderAudit(skipped);
+assert(report.innerHTML.includes("Node is not installed."), "skipped access reason");
+assert(report.innerHTML.includes("Docker is not installed."), "skipped docker reason");
+assert(!report.innerHTML.includes("What it is"), "skipped tools omit the body");
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "audit-report-"));
 const reportPath = path.join(tmp, "report.html");
@@ -129,7 +139,7 @@ vm.runInContext(scriptMatch[1], embeddedContext, { filename: "report.html" });
 const embeddedText = embeddedReport.innerHTML.replace(/<[^>]+>/g, " ");
 assert(embeddedText.includes("example-mac"), "embedded report rendered the fixture");
 assert(embeddedText.includes("Privilege matrix"), "embedded report shows the matrix");
-assert(embeddedReport.innerHTML.includes('class="pill gap"'), "embedded report shows a gap");
+assert(embeddedReport.innerHTML.includes('class="pill bad"'), "embedded report shows a gap");
 
 const httpReport = new El("report");
 const httpError = new El("error");
